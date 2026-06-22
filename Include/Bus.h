@@ -104,7 +104,6 @@ class Bus
         uint8_t readIO(uint16_t address);
         void writeIO(uint16_t address, uint8_t value);
 
-        uint8_t interruptEnable;
         uint8_t interruptStatus;
 };
 
