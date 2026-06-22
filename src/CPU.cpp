@@ -40,7 +40,8 @@ void CPU::reset()
 
 int CPU::step()
 {
-    return 0;
+    uint8_t opcode = fetch8();
+    return decodeExecute(opcode);
 }
 
 uint8_t CPU::fetch8()
@@ -1733,6 +1734,1566 @@ int CPU::decodeCB(uint8_t opcode)
 {
     switch (opcode)
     {
+        case 0x00: // RLC B
+        {
+            setB(rlc8(getB()));
+            return 8;
+        }
+
+        case 0x01: // RLC C
+        {
+            setC(rlc8(getC()));
+            return 8;
+        }
+
+        case 0x02: // RLC D
+        {
+            setD(rlc8(getD()));
+            return 8;
+        }
+
+        case 0x03: // RLC E
+        {
+            setE(rlc8(getE()));
+            return 8;
+        }
+
+        case 0x04: // RLC H
+        {
+            setH(rlc8(getH()));
+            return 8;
+        }
+
+        case 0x05: // RLC L
+        {
+            setL(rlc8(getL()));
+            return 8;
+        }
+
+        case 0x06: // RLC (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, rlc8(bus->read(addr)));
+            return 16;
+        }
+
+        case 0x07: // RLC A
+        {
+            setA(rlc8(getA()));
+            return 8;
+        }
+
+        case 0x08: // RRC B
+        {
+            setB(rrc8(getB()));
+            return 8;
+        }
+
+        case 0x09: // RRC C
+        {
+            setC(rrc8(getC()));
+            return 8;
+        }
+
+        case 0x0A: // RRC D
+        {
+            setD(rrc8(getD()));
+            return 8;
+        }
+
+        case 0x0B: // RRC E
+        {
+            setE(rrc8(getE()));
+            return 8;
+        }
+
+        case 0x0C: // RRC H
+        {
+            setH(rrc8(getH()));
+            return 8;
+        }
+
+        case 0x0D: // RRC L
+        {
+            setL(rrc8(getL()));
+            return 8;
+        }
+
+        case 0x0E: // RRC (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, rrc8(bus->read(addr)));
+            return 16;
+        }
+
+        case 0x0F: // RRC A
+        {
+            setA(rrc8(getA()));
+            return 8;
+        }
+
+        case 0x10: // RL B
+        {
+            setB(rl8(getB()));
+            return 8;
+        }
+
+        case 0x11: // RL C
+        {
+            setC(rl8(getC()));
+            return 8;
+        }
+
+        case 0x12: // RL D
+        {
+            setD(rl8(getD()));
+            return 8;
+        }
+
+        case 0x13: // RL E
+        {
+            setE(rl8(getE()));
+            return 8;
+        }
+
+        case 0x14: // RL H
+        {
+            setH(rl8(getH()));
+            return 8;
+        }
+
+        case 0x15: // RL L
+        {
+            setL(rl8(getL()));
+            return 8;
+        }
+
+        case 0x16: // RL (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, rl8(bus->read(addr)));
+            return 16;
+        }
+
+        case 0x17: // RL A
+        {
+            setA(rl8(getA()));
+            return 8;
+        }
+
+        case 0x18: // RR B
+        {
+            setB(rr8(getB()));
+            return 8;
+        }
+
+        case 0x19: // RR C
+        {
+            setC(rr8(getC()));
+            return 8;
+        }
+
+        case 0x1A: // RR D
+        {
+            setD(rr8(getD()));
+            return 8;
+        }
+
+        case 0x1B: // RR E
+        {
+            setE(rr8(getE()));
+            return 8;
+        }
+
+        case 0x1C: // RR H
+        {
+            setH(rr8(getH()));
+            return 8;
+        }
+
+        case 0x1D: // RR L
+        {
+            setL(rr8(getL()));
+            return 8;
+        }
+
+        case 0x1E: // RR (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, rr8(bus->read(addr)));
+            return 16;
+        }
+
+        case 0x1F: // RR A
+        {
+            setA(rr8(getA()));
+            return 8;
+        }
+
+        case 0x20: // SLA B
+        {
+            setB(sla8(getB()));
+            return 8;
+        }
+
+        case 0x21: // SLA C
+        {
+            setC(sla8(getC()));
+            return 8;
+        }
+
+        case 0x22: // SLA D
+        {
+            setD(sla8(getD()));
+            return 8;
+        }
+
+        case 0x23: // SLA E
+        {
+            setE(sla8(getE()));
+            return 8;
+        }
+
+        case 0x24: // SLA H
+        {
+            setH(sla8(getH()));
+            return 8;
+        }
+
+        case 0x25: // SLA L
+        {
+            setL(sla8(getL()));
+            return 8;
+        }
+
+        case 0x26: // SLA (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, sla8(bus->read(addr)));
+            return 16;
+        }
+
+        case 0x27: // SLA A
+        {
+            setA(sla8(getA()));
+            return 8;
+        }
+
+        case 0x28: // SRA B
+        {
+            setB(sra8(getB()));
+            return 8;
+        }
+
+        case 0x29: // SRA C
+        {
+            setC(sra8(getC()));
+            return 8;
+        }
+
+        case 0x2A: // SRA D
+        {
+            setD(sra8(getD()));
+            return 8;
+        }
+
+        case 0x2B: // SRA E
+        {
+            setE(sra8(getE()));
+            return 8;
+        }
+
+        case 0x2C: // SRA H
+        {
+            setH(sra8(getH()));
+            return 8;
+        }
+
+        case 0x2D: // SRA L
+        {
+            setL(sra8(getL()));
+            return 8;
+        }
+
+        case 0x2E: // SRA (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, sra8(bus->read(addr)));
+            return 16;
+        }
+
+        case 0x2F: // SRA A
+        {
+            setA(sra8(getA()));
+            return 8;
+        }
+
+        case 0x30: // SWAP B
+        {
+            setB(swap8(getB()));
+            return 8;
+        }
+
+        case 0x31: // SWAP C
+        {
+            setC(swap8(getC()));
+            return 8;
+        }
+
+        case 0x32: // SWAP D
+        {
+            setD(swap8(getD()));
+            return 8;
+        }
+
+        case 0x33: // SWAP E
+        {
+            setE(swap8(getE()));
+            return 8;
+        }
+
+        case 0x34: // SWAP H
+        {
+            setH(swap8(getH()));
+            return 8;
+        }
+
+        case 0x35: // SWAP L
+        {
+            setL(swap8(getL()));
+            return 8;
+        }
+
+        case 0x36: // SWAP (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, swap8(bus->read(addr)));
+            return 16;
+        }
+
+        case 0x37: // SWAP A
+        {
+            setA(swap8(getA()));
+            return 8;
+        }
+
+        case 0x38: // SRL B
+        {
+            setB(srl8(getB()));
+            return 8;
+        }
+
+        case 0x39: // SRL C
+        {
+            setC(srl8(getC()));
+            return 8;
+        }
+
+        case 0x3A: // SRL D
+        {
+            setD(srl8(getD()));
+            return 8;
+        }
+
+        case 0x3B: // SRL E
+        {
+            setE(srl8(getE()));
+            return 8;
+        }
+
+        case 0x3C: // SRL H
+        {
+            setH(srl8(getH()));
+            return 8;
+        }
+
+        case 0x3D: // SRL L
+        {
+            setL(srl8(getL()));
+            return 8;
+        }
+
+        case 0x3E: // SRL (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, srl8(bus->read(addr)));
+            return 16;
+        }
+
+        case 0x3F: // SRL A
+        {
+            setA(srl8(getA()));
+            return 8;
+        }
+
+        case 0x40: // BIT 0, B
+        {
+            bit8(0, getB());
+            return 8;
+        }
+
+        case 0x41: // BIT 0, C
+        {
+            bit8(0, getC());
+            return 8;
+        }
+
+        case 0x42: // BIT 0, D
+        {
+            bit8(0, getD());
+            return 8;
+        }
+
+        case 0x43: // BIT 0, E
+        {
+            bit8(0, getE());
+            return 8;
+        }
+
+        case 0x44: // BIT 0, H
+        {
+            bit8(0, getH());
+            return 8;
+        }
+
+        case 0x45: // BIT 0, L
+        {
+            bit8(0, getL());
+            return 8;
+        }
+
+        case 0x46: // BIT 0, (HL)
+        {
+            bit8(0, bus->read(getHL()));
+            return 12;
+        }
+
+        case 0x47: // BIT 0, A
+        {
+            bit8(0, getA());
+            return 8;
+        }
+
+        case 0x48: // BIT 1, B
+        {
+            bit8(1, getB());
+            return 8;
+        }
+
+        case 0x49: // BIT 1, C
+        {
+            bit8(1, getC());
+            return 8;
+        }
+
+        case 0x4A: // BIT 1, D
+        {
+            bit8(1, getD());
+            return 8;
+        }
+
+        case 0x4B: // BIT 1, E
+        {
+            bit8(1, getE());
+            return 8;
+        }
+
+        case 0x4C: // BIT 1, H
+        {
+            bit8(1, getH());
+            return 8;
+        }
+
+        case 0x4D: // BIT 1, L
+        {
+            bit8(1, getL());
+            return 8;
+        }
+
+        case 0x4E: // BIT 1, (HL)
+        {
+            bit8(1, bus->read(getHL()));
+            return 12;
+        }
+
+        case 0x4F: // BIT 1, A
+        {
+            bit8(1, getA());
+            return 8;
+        }
+
+        case 0x50: // BIT 2, B
+        {
+            bit8(2, getB());
+            return 8;
+        }
+
+        case 0x51: // BIT 2, C
+        {
+            bit8(2, getC());
+            return 8;
+        }
+
+        case 0x52: // BIT 2, D
+        {
+            bit8(2, getD());
+            return 8;
+        }
+
+        case 0x53: // BIT 2, E
+        {
+            bit8(2, getE());
+            return 8;
+        }
+
+        case 0x54: // BIT 2, H
+        {
+            bit8(2, getH());
+            return 8;
+        }
+
+        case 0x55: // BIT 2, L
+        {
+            bit8(2, getL());
+            return 8;
+        }
+
+        case 0x56: // BIT 2, (HL)
+        {
+            bit8(2, bus->read(getHL()));
+            return 12;
+        }
+
+        case 0x57: // BIT 2, A
+        {
+            bit8(2, getA());
+            return 8;
+        }
+
+        case 0x58: // BIT 3, B
+        {
+            bit8(3, getB());
+            return 8;
+        }
+
+        case 0x59: // BIT 3, C
+        {
+            bit8(3, getC());
+            return 8;
+        }
+
+        case 0x5A: // BIT 3, D
+        {
+            bit8(3, getD());
+            return 8;
+        }
+
+        case 0x5B: // BIT 3, E
+        {
+            bit8(3, getE());
+            return 8;
+        }
+
+        case 0x5C: // BIT 3, H
+        {
+            bit8(3, getH());
+            return 8;
+        }
+
+        case 0x5D: // BIT 3, L
+        {
+            bit8(3, getL());
+            return 8;
+        }
+
+        case 0x5E: // BIT 3, (HL)
+        {
+            bit8(3, bus->read(getHL()));
+            return 12;
+        }
+
+        case 0x5F: // BIT 3, A
+        {
+            bit8(3, getA());
+            return 8;
+        }
+
+        case 0x60: // BIT 4, B
+        {
+            bit8(4, getB());
+            return 8;
+        }
+
+        case 0x61: // BIT 4, C
+        {
+            bit8(4, getC());
+            return 8;
+        }
+
+        case 0x62: // BIT 4, D
+        {
+            bit8(4, getD());
+            return 8;
+        }
+
+        case 0x63: // BIT 4, E
+        {
+            bit8(4, getE());
+            return 8;
+        }
+
+        case 0x64: // BIT 4, H
+        {
+            bit8(4, getH());
+            return 8;
+        }
+
+        case 0x65: // BIT 4, L
+        {
+            bit8(4, getL());
+            return 8;
+        }
+
+        case 0x66: // BIT 4, (HL)
+        {
+            bit8(4, bus->read(getHL()));
+            return 12;
+        }
+
+        case 0x67: // BIT 4, A
+        {
+            bit8(4, getA());
+            return 8;
+        }
+
+        case 0x68: // BIT 5, B
+        {
+            bit8(5, getB());
+            return 8;
+        }
+
+        case 0x69: // BIT 5, C
+        {
+            bit8(5, getC());
+            return 8;
+        }
+
+        case 0x6A: // BIT 5, D
+        {
+            bit8(5, getD());
+            return 8;
+        }
+
+        case 0x6B: // BIT 5, E
+        {
+            bit8(5, getE());
+            return 8;
+        }
+
+        case 0x6C: // BIT 5, H
+        {
+            bit8(5, getH());
+            return 8;
+        }
+
+        case 0x6D: // BIT 5, L
+        {
+            bit8(5, getL());
+            return 8;
+        }
+
+        case 0x6E: // BIT 5, (HL)
+        {
+            bit8(5, bus->read(getHL()));
+            return 12;
+        }
+
+        case 0x6F: // BIT 5, A
+        {
+            bit8(5, getA());
+            return 8;
+        }
+
+        case 0x70: // BIT 6, B
+        {
+            bit8(6, getB());
+            return 8;
+        }
+
+        case 0x71: // BIT 6, C
+        {
+            bit8(6, getC());
+            return 8;
+        }
+
+        case 0x72: // BIT 6, D
+        {
+            bit8(6, getD());
+            return 8;
+        }
+
+        case 0x73: // BIT 6, E
+        {
+            bit8(6, getE());
+            return 8;
+        }
+
+        case 0x74: // BIT 6, H
+        {
+            bit8(6, getH());
+            return 8;
+        }
+
+        case 0x75: // BIT 6, L
+        {
+            bit8(6, getL());
+            return 8;
+        }
+
+        case 0x76: // BIT 6, (HL)
+        {
+            bit8(6, bus->read(getHL()));
+            return 12;
+        }
+
+        case 0x77: // BIT 6, A
+        {
+            bit8(6, getA());
+            return 8;
+        }
+
+        case 0x78: // BIT 7, B
+        {
+            bit8(7, getB());
+            return 8;
+        }
+
+        case 0x79: // BIT 7, C
+        {
+            bit8(7, getC());
+            return 8;
+        }
+
+        case 0x7A: // BIT 7, D
+        {
+            bit8(7, getD());
+            return 8;
+        }
+
+        case 0x7B: // BIT 7, E
+        {
+            bit8(7, getE());
+            return 8;
+        }
+
+        case 0x7C: // BIT 7, H
+        {
+            bit8(7, getH());
+            return 8;
+        }
+
+        case 0x7D: // BIT 7, L
+        {
+            bit8(7, getL());
+            return 8;
+        }
+
+        case 0x7E: // BIT 7, (HL)
+        {
+            bit8(7, bus->read(getHL()));
+            return 12;
+        }
+
+        case 0x7F: // BIT 7, A
+        {
+            bit8(7, getA());
+            return 8;
+        }
+
+        case 0x80: // RES 0, B
+        {
+            setB(res8(0, getB()));
+            return 8;
+        }
+
+        case 0x81: // RES 0, C
+        {
+            setC(res8(0, getC()));
+            return 8;
+        }
+
+        case 0x82: // RES 0, D
+        {
+            setD(res8(0, getD()));
+            return 8;
+        }
+
+        case 0x83: // RES 0, E
+        {
+            setE(res8(0, getE()));
+            return 8;
+        }
+
+        case 0x84: // RES 0, H
+        {
+            setH(res8(0, getH()));
+            return 8;
+        }
+
+        case 0x85: // RES 0, L
+        {
+            setL(res8(0, getL()));
+            return 8;
+        }
+
+        case 0x86: // RES 0, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, res8(0, bus->read(addr)));
+            return 16;
+        }
+
+        case 0x87: // RES 0, A
+        {
+            setA(res8(0, getA()));
+            return 8;
+        }
+
+        case 0x88: // RES 1, B
+        {
+            setB(res8(1, getB()));
+            return 8;
+        }
+
+        case 0x89: // RES 1, C
+        {
+            setC(res8(1, getC()));
+            return 8;
+        }
+
+        case 0x8A: // RES 1, D
+        {
+            setD(res8(1, getD()));
+            return 8;
+        }
+
+        case 0x8B: // RES 1, E
+        {
+            setE(res8(1, getE()));
+            return 8;
+        }
+
+        case 0x8C: // RES 1, H
+        {
+            setH(res8(1, getH()));
+            return 8;
+        }
+
+        case 0x8D: // RES 1, L
+        {
+            setL(res8(1, getL()));
+            return 8;
+        }
+
+        case 0x8E: // RES 1, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, res8(1, bus->read(addr)));
+            return 16;
+        }
+
+        case 0x8F: // RES 1, A
+        {
+            setA(res8(1, getA()));
+            return 8;
+        }
+
+        case 0x90: // RES 2, B
+        {
+            setB(res8(2, getB()));
+            return 8;
+        }
+
+        case 0x91: // RES 2, C
+        {
+            setC(res8(2, getC()));
+            return 8;
+        }
+
+        case 0x92: // RES 2, D
+        {
+            setD(res8(2, getD()));
+            return 8;
+        }
+
+        case 0x93: // RES 2, E
+        {
+            setE(res8(2, getE()));
+            return 8;
+        }
+
+        case 0x94: // RES 2, H
+        {
+            setH(res8(2, getH()));
+            return 8;
+        }
+
+        case 0x95: // RES 2, L
+        {
+            setL(res8(2, getL()));
+            return 8;
+        }
+
+        case 0x96: // RES 2, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, res8(2, bus->read(addr)));
+            return 16;
+        }
+
+        case 0x97: // RES 2, A
+        {
+            setA(res8(2, getA()));
+            return 8;
+        }
+
+        case 0x98: // RES 3, B
+        {
+            setB(res8(3, getB()));
+            return 8;
+        }
+
+        case 0x99: // RES 3, C
+        {
+            setC(res8(3, getC()));
+            return 8;
+        }
+
+        case 0x9A: // RES 3, D
+        {
+            setD(res8(3, getD()));
+            return 8;
+        }
+
+        case 0x9B: // RES 3, E
+        {
+            setE(res8(3, getE()));
+            return 8;
+        }
+
+        case 0x9C: // RES 3, H
+        {
+            setH(res8(3, getH()));
+            return 8;
+        }
+
+        case 0x9D: // RES 3, L
+        {
+            setL(res8(3, getL()));
+            return 8;
+        }
+
+        case 0x9E: // RES 3, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, res8(3, bus->read(addr)));
+            return 16;
+        }
+
+        case 0x9F: // RES 3, A
+        {
+            setA(res8(3, getA()));
+            return 8;
+        }
+
+        case 0xA0: // RES 4, B
+        {
+            setB(res8(4, getB()));
+            return 8;
+        }
+
+        case 0xA1: // RES 4, C
+        {
+            setC(res8(4, getC()));
+            return 8;
+        }
+
+        case 0xA2: // RES 4, D
+        {
+            setD(res8(4, getD()));
+            return 8;
+        }
+
+        case 0xA3: // RES 4, E
+        {
+            setE(res8(4, getE()));
+            return 8;
+        }
+
+        case 0xA4: // RES 4, H
+        {
+            setH(res8(4, getH()));
+            return 8;
+        }
+
+        case 0xA5: // RES 4, L
+        {
+            setL(res8(4, getL()));
+            return 8;
+        }
+
+        case 0xA6: // RES 4, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, res8(4, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xA7: // RES 4, A
+        {
+            setA(res8(4, getA()));
+            return 8;
+        }
+
+        case 0xA8: // RES 5, B
+        {
+            setB(res8(5, getB()));
+            return 8;
+        }
+
+        case 0xA9: // RES 5, C
+        {
+            setC(res8(5, getC()));
+            return 8;
+        }
+
+        case 0xAA: // RES 5, D
+        {
+            setD(res8(5, getD()));
+            return 8;
+        }
+
+        case 0xAB: // RES 5, E
+        {
+            setE(res8(5, getE()));
+            return 8;
+        }
+
+        case 0xAC: // RES 5, H
+        {
+            setH(res8(5, getH()));
+            return 8;
+        }
+
+        case 0xAD: // RES 5, L
+        {
+            setL(res8(5, getL()));
+            return 8;
+        }
+
+        case 0xAE: // RES 5, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, res8(5, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xAF: // RES 5, A
+        {
+            setA(res8(5, getA()));
+            return 8;
+        }
+
+        case 0xB0: // RES 6, B
+        {
+            setB(res8(6, getB()));
+            return 8;
+        }
+
+        case 0xB1: // RES 6, C
+        {
+            setC(res8(6, getC()));
+            return 8;
+        }
+
+        case 0xB2: // RES 6, D
+        {
+            setD(res8(6, getD()));
+            return 8;
+        }
+
+        case 0xB3: // RES 6, E
+        {
+            setE(res8(6, getE()));
+            return 8;
+        }
+
+        case 0xB4: // RES 6, H
+        {
+            setH(res8(6, getH()));
+            return 8;
+        }
+
+        case 0xB5: // RES 6, L
+        {
+            setL(res8(6, getL()));
+            return 8;
+        }
+
+        case 0xB6: // RES 6, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, res8(6, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xB7: // RES 6, A
+        {
+            setA(res8(6, getA()));
+            return 8;
+        }
+
+        case 0xB8: // RES 7, B
+        {
+            setB(res8(7, getB()));
+            return 8;
+        }
+
+        case 0xB9: // RES 7, C
+        {
+            setC(res8(7, getC()));
+            return 8;
+        }
+
+        case 0xBA: // RES 7, D
+        {
+            setD(res8(7, getD()));
+            return 8;
+        }
+
+        case 0xBB: // RES 7, E
+        {
+            setE(res8(7, getE()));
+            return 8;
+        }
+
+        case 0xBC: // RES 7, H
+        {
+            setH(res8(7, getH()));
+            return 8;
+        }
+
+        case 0xBD: // RES 7, L
+        {
+            setL(res8(7, getL()));
+            return 8;
+        }
+
+        case 0xBE: // RES 7, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, res8(7, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xBF: // RES 7, A
+        {
+            setA(res8(7, getA()));
+            return 8;
+        }
+
+        case 0xC0: // SET 0, B
+        {
+            setB(set8(0, getB()));
+            return 8;
+        }
+
+        case 0xC1: // SET 0, C
+        {
+            setC(set8(0, getC()));
+            return 8;
+        }
+
+        case 0xC2: // SET 0, D
+        {
+            setD(set8(0, getD()));
+            return 8;
+        }
+
+        case 0xC3: // SET 0, E
+        {
+            setE(set8(0, getE()));
+            return 8;
+        }
+
+        case 0xC4: // SET 0, H
+        {
+            setH(set8(0, getH()));
+            return 8;
+        }
+
+        case 0xC5: // SET 0, L
+        {
+            setL(set8(0, getL()));
+            return 8;
+        }
+
+        case 0xC6: // SET 0, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, set8(0, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xC7: // SET 0, A
+        {
+            setA(set8(0, getA()));
+            return 8;
+        }
+
+        case 0xC8: // SET 1, B
+        {
+            setB(set8(1, getB()));
+            return 8;
+        }
+
+        case 0xC9: // SET 1, C
+        {
+            setC(set8(1, getC()));
+            return 8;
+        }
+
+        case 0xCA: // SET 1, D
+        {
+            setD(set8(1, getD()));
+            return 8;
+        }
+
+        case 0xCB: // SET 1, E
+        {
+            setE(set8(1, getE()));
+            return 8;
+        }
+
+        case 0xCC: // SET 1, H
+        {
+            setH(set8(1, getH()));
+            return 8;
+        }
+
+        case 0xCD: // SET 1, L
+        {
+            setL(set8(1, getL()));
+            return 8;
+        }
+
+        case 0xCE: // SET 1, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, set8(1, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xCF: // SET 1, A
+        {
+            setA(set8(1, getA()));
+            return 8;
+        }
+
+        case 0xD0: // SET 2, B
+        {
+            setB(set8(2, getB()));
+            return 8;
+        }
+
+        case 0xD1: // SET 2, C
+        {
+            setC(set8(2, getC()));
+            return 8;
+        }
+
+        case 0xD2: // SET 2, D
+        {
+            setD(set8(2, getD()));
+            return 8;
+        }
+
+        case 0xD3: // SET 2, E
+        {
+            setE(set8(2, getE()));
+            return 8;
+        }
+
+        case 0xD4: // SET 2, H
+        {
+            setH(set8(2, getH()));
+            return 8;
+        }
+
+        case 0xD5: // SET 2, L
+        {
+            setL(set8(2, getL()));
+            return 8;
+        }
+
+        case 0xD6: // SET 2, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, set8(2, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xD7: // SET 2, A
+        {
+            setA(set8(2, getA()));
+            return 8;
+        }
+
+        case 0xD8: // SET 3, B
+        {
+            setB(set8(3, getB()));
+            return 8;
+        }
+
+        case 0xD9: // SET 3, C
+        {
+            setC(set8(3, getC()));
+            return 8;
+        }
+
+        case 0xDA: // SET 3, D
+        {
+            setD(set8(3, getD()));
+            return 8;
+        }
+
+        case 0xDB: // SET 3, E
+        {
+            setE(set8(3, getE()));
+            return 8;
+        }
+
+        case 0xDC: // SET 3, H
+        {
+            setH(set8(3, getH()));
+            return 8;
+        }
+
+        case 0xDD: // SET 3, L
+        {
+            setL(set8(3, getL()));
+            return 8;
+        }
+
+        case 0xDE: // SET 3, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, set8(3, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xDF: // SET 3, A
+        {
+            setA(set8(3, getA()));
+            return 8;
+        }
+
+        case 0xE0: // SET 4, B
+        {
+            setB(set8(4, getB()));
+            return 8;
+        }
+
+        case 0xE1: // SET 4, C
+        {
+            setC(set8(4, getC()));
+            return 8;
+        }
+
+        case 0xE2: // SET 4, D
+        {
+            setD(set8(4, getD()));
+            return 8;
+        }
+
+        case 0xE3: // SET 4, E
+        {
+            setE(set8(4, getE()));
+            return 8;
+        }
+
+        case 0xE4: // SET 4, H
+        {
+            setH(set8(4, getH()));
+            return 8;
+        }
+
+        case 0xE5: // SET 4, L
+        {
+            setL(set8(4, getL()));
+            return 8;
+        }
+
+        case 0xE6: // SET 4, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, set8(4, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xE7: // SET 4, A
+        {
+            setA(set8(4, getA()));
+            return 8;
+        }
+
+        case 0xE8: // SET 5, B
+        {
+            setB(set8(5, getB()));
+            return 8;
+        }
+
+        case 0xE9: // SET 5, C
+        {
+            setC(set8(5, getC()));
+            return 8;
+        }
+
+        case 0xEA: // SET 5, D
+        {
+            setD(set8(5, getD()));
+            return 8;
+        }
+
+        case 0xEB: // SET 5, E
+        {
+            setE(set8(5, getE()));
+            return 8;
+        }
+
+        case 0xEC: // SET 5, H
+        {
+            setH(set8(5, getH()));
+            return 8;
+        }
+
+        case 0xED: // SET 5, L
+        {
+            setL(set8(5, getL()));
+            return 8;
+        }
+
+        case 0xEE: // SET 5, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, set8(5, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xEF: // SET 5, A
+        {
+            setA(set8(5, getA()));
+            return 8;
+        }
+
+        case 0xF0: // SET 6, B
+        {
+            setB(set8(6, getB()));
+            return 8;
+        }
+
+        case 0xF1: // SET 6, C
+        {
+            setC(set8(6, getC()));
+            return 8;
+        }
+
+        case 0xF2: // SET 6, D
+        {
+            setD(set8(6, getD()));
+            return 8;
+        }
+
+        case 0xF3: // SET 6, E
+        {
+            setE(set8(6, getE()));
+            return 8;
+        }
+
+        case 0xF4: // SET 6, H
+        {
+            setH(set8(6, getH()));
+            return 8;
+        }
+
+        case 0xF5: // SET 6, L
+        {
+            setL(set8(6, getL()));
+            return 8;
+        }
+
+        case 0xF6: // SET 6, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, set8(6, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xF7: // SET 6, A
+        {
+            setA(set8(6, getA()));
+            return 8;
+        }
+
+        case 0xF8: // SET 7, B
+        {
+            setB(set8(7, getB()));
+            return 8;
+        }
+
+        case 0xF9: // SET 7, C
+        {
+            setC(set8(7, getC()));
+            return 8;
+        }
+
+        case 0xFA: // SET 7, D
+        {
+            setD(set8(7, getD()));
+            return 8;
+        }
+
+        case 0xFB: // SET 7, E
+        {
+            setE(set8(7, getE()));
+            return 8;
+        }
+
+        case 0xFC: // SET 7, H
+        {
+            setH(set8(7, getH()));
+            return 8;
+        }
+
+        case 0xFD: // SET 7, L
+        {
+            setL(set8(7, getL()));
+            return 8;
+        }
+
+        case 0xFE: // SET 7, (HL)
+        {
+            uint16_t addr = getHL();
+            bus->write(addr, set8(7, bus->read(addr)));
+            return 16;
+        }
+
+        case 0xFF: // SET 7, A
+        {
+            setA(set8(7, getA()));
+            return 8;
+        }
+
         default:
             return illegalOpcodeCB(opcode);
     }
