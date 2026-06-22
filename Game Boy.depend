@@ -1,0 +1,85 @@
+# depslib dependency file v1.0
+1782089212 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\joypad.cpp
+	"Joypad.h"
+
+1782088901 c:\users\cbros\onedrive\documents\codeblocks\game boy\include\joypad.h
+
+1781992634 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\main.cpp
+
+1782088901 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\memory.cpp
+	"Memory.h"
+
+1782088901 c:\users\cbros\onedrive\documents\codeblocks\game boy\include\memory.h
+	<array>
+	<cstdint>
+
+1782088901 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\cpu.cpp
+	<iostream>
+	"CPU.h"
+	"Bus.h"
+
+1782089366 c:\users\cbros\onedrive\documents\codeblocks\game boy\include\cpu.h
+	<cstdint>
+
+1782088901 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\cartridge.cpp
+	"Cartridge.h"
+
+1782088901 c:\users\cbros\onedrive\documents\codeblocks\game boy\include\cartridge.h
+	<cstdint>
+	<vector>
+
+1782088901 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\bus.cpp
+	"APU.h"
+	"Bus.h"
+	"Cartridge.h"
+	"Joypad.h"
+	"Memory.h"
+	"PPU.h"
+
+1782088901 c:\users\cbros\onedrive\documents\codeblocks\game boy\include\bus.h
+	<cstdint>
+
+1782088901 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\apu.cpp
+	"APU.h"
+	"AudioOutput.h"
+
+1782088901 c:\users\cbros\onedrive\documents\codeblocks\game boy\include\apu.h
+	<cstdint>
+
+1782088901 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\audiooutput.cpp
+	"AudioOutput.h"
+
+1782088901 c:\users\cbros\onedrive\documents\codeblocks\game boy\include\audiooutput.h
+
+1782088901 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\ppu.cpp
+	"PPU.h"
+	"VideoOutput.h"
+
+1782088901 c:\users\cbros\onedrive\documents\codeblocks\game boy\include\ppu.h
+	<cstdint>
+
+1782088901 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\timer.cpp
+	"Timer.h"
+
+1782088901 c:\users\cbros\onedrive\documents\codeblocks\game boy\include\timer.h
+
+1782088901 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\videooutput.cpp
+	"VideoOutput.h"
+
+1782088901 c:\users\cbros\onedrive\documents\codeblocks\game boy\include\videooutput.h
+
+1782088901 source:c:\users\cbros\onedrive\documents\codeblocks\game boy\src\emulationsession.cpp
+	"EmulationSession.h"
+
+1782088901 c:\users\cbros\onedrive\documents\codeblocks\game boy\include\emulationsession.h
+	"APU.h"
+	"AudioOutput.h"
+	"Bus.h"
+	"Cartridge.h"
+	"CPU.h"
+	"Joypad.h"
+	"memory.h"
+	"PPU.h"
+	"Timer.h"
+	"VideoOutput.h"
+
