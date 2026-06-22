@@ -5,6 +5,7 @@
 // non-commercial use only. Redistribution, modification, or use
 // of this code in whole or in part for any other purpose is
 // strictly prohibited without the prior written consent of the author.
+#include <fstream>
 #include "Memory.h"
 
 Memory::Memory() :
@@ -29,4 +30,15 @@ void Memory::reset()
 
     bootRomEnabled  = true;
     interruptEnable = 0x00;
+}
+
+bool Memory::loadBIOS(const std::string& path)
+{
+    std::ifstream file(path, std::ios::binary);
+    if (!file)
+        return false;
+
+    file.read(reinterpret_cast<char*>(bootRom.data()), bootRom.size());
+
+    return file.gcount() == static_cast<std::streamsize>(bootRom.size());
 }

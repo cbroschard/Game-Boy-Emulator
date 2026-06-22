@@ -10,6 +10,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string>
 
 class Memory
 {
@@ -43,6 +44,8 @@ class Memory
         inline bool isBootRomEnabled() const { return bootRomEnabled; }
 
         inline void disableBootRom() { bootRomEnabled = false; }
+
+        bool loadBIOS(const std::string& path);
 
     protected:
 
