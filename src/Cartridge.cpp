@@ -16,3 +16,9 @@ Cartridge::~Cartridge()
 {
 
 }
+
+void Cartridge::reset()
+{
+    cartridgeRAM.clear();
+    cartridgeROM.clear();
+}

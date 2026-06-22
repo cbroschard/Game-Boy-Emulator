@@ -17,6 +17,14 @@ class Cartridge
         Cartridge();
         virtual ~Cartridge();
 
+        void reset();
+
+        inline uint8_t readRAM(uint16_t offset) { return cartridgeRAM[offset]; }
+        inline void writeRAM(uint16_t offset, uint8_t value) { cartridgeRAM[offset] = value; }
+
+        inline uint8_t readROM(uint16_t offset) { return cartridgeROM[offset]; }
+        inline void writeROM(uint16_t offset, uint8_t value) { cartridgeROM[offset] = value; }
+
     protected:
 
     private:
