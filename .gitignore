@@ -1,33 +1,51 @@
-.tmp.driveupload/
+# Build folders
 bin/
-include/imgui/
-src/imgui/
 obj/
-tape/
-!License.txt
-!Licenses/*.txt
-!include/tape/
-!src/tape/
-PRG/
-d64/
-d71/
-d81/
-cart/
-imgui.ini
-*.bin
-*.cbp
-chargen
-*.depend
-kernal
-*.hdd
-*.rom
-basic
+build/
+Debug/
+Release/
+
+# Code::Blocks
 *.layout
-*.cfg
+*.depend
+*.cbp
+
+# Compiled files
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.lib
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ROMs / BIOS / copyrighted files
+*.rom
+*.bin
+*.col
+bios*
+BIOS*
+roms/
+
+# Temp/Debug files
 *.txt
-*.d64
-*.d71
-*.d81
-*.nib
-*.ini
-*.sav
+*.log
+
+# Config files
+*.cfg
+
+# Keep project license tracked
+!License.txt
+!licenses/**
+
+# Keep Include/Src Debug folder
+!include/Debug/
+!include/Debug/**
+!src/Debug/
+!src/Debug/**
