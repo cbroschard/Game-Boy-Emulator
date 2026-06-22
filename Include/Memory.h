@@ -20,8 +20,8 @@ class Memory
 
         void reset();
 
-        uint8_t readVRAM(uint16_t address);
-        void writeVRAM(uint16_t address, uint8_t value);
+        inline uint8_t readVRAM(uint16_t offset) { return vram[offset]; }
+        inline void writeVRAM(uint16_t offset, uint8_t value) { vram[offset] = value; }
 
         inline uint8_t readWRAM(uint16_t offset) const { return wram[offset]; }
         inline void writeWRAM(uint16_t offset, uint8_t value) { wram[offset] = value; }
