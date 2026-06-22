@@ -4,6 +4,7 @@ include/imgui/
 src/imgui/
 obj/
 tape/
+!License.txt
 !Licenses/*.txt
 !include/tape/
 !src/tape/
