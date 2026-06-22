@@ -7,12 +7,26 @@
 // strictly prohibited without the prior written consent of the author.
 #include "Memory.h"
 
-Memory::Memory()
+Memory::Memory() :
+    bootRomEnabled(true),
+    interruptEnable(0x00)
 {
-
+    reset();
 }
 
 Memory::~Memory()
 {
 
+}
+
+void Memory::reset()
+{
+    vram.fill(0x00);
+    wram.fill(0x00);
+    oam.fill(0x00);
+    io.fill(0x00);
+    hram.fill(0x00);
+
+    bootRomEnabled  = true;
+    interruptEnable = 0x00;
 }
