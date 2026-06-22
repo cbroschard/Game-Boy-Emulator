@@ -17,6 +17,21 @@ EmulationSession::~EmulationSession()
 
 }
 
+void EmulationSession::run()
+{
+
+}
+
+void EmulationSession::setBIOSPath(const std::string& path)
+{
+
+}
+
+void EmulationSession::loadCartridge(const std::string& path)
+{
+
+}
+
 void EmulationSession::wireUp()
 {
     apu.attachAudioOutputInstance(&audioOutput);

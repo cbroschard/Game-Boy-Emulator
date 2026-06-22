@@ -8,6 +8,7 @@
 #ifndef EMULATIONSESSION_H
 #define EMULATIONSESSION_H
 
+#include <string>
 #include "APU.h"
 #include "AudioOutput.h"
 #include "Bus.h"
@@ -24,6 +25,12 @@ class EmulationSession
     public:
         EmulationSession();
         virtual ~EmulationSession();
+
+        void run();
+
+        void setBIOSPath(const std::string& path);
+
+        void loadCartridge(const std::string& path);
 
     protected:
 
