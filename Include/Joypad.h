@@ -8,6 +8,7 @@
 #ifndef JOYPAD_H
 #define JOYPAD_H
 
+#include <cstdint>
 
 class Joypad
 {
@@ -15,9 +16,35 @@ class Joypad
         Joypad();
         virtual ~Joypad();
 
+        void reset();
+
+        uint8_t read() const;
+        void write(uint8_t value);
+
+        void setButtonA(bool pressed);
+        void setButtonB(bool pressed);
+        void setSelect(bool pressed);
+        void setStart(bool pressed);
+
+        void setLeft(bool pressed);
+        void setRight(bool pressed);
+        void setUp(bool pressed);
+        void setDown(bool pressed);
+
     protected:
 
     private:
+        uint8_t selectBits;
+
+        bool a;
+        bool b;
+        bool select;
+        bool start;
+
+        bool left;
+        bool right;
+        bool up;
+        bool down;
 };
 
 #endif // JOYPAD_H
