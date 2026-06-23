@@ -8,6 +8,9 @@
 #ifndef VIDEOOUTPUT_H
 #define VIDEOOUTPUT_H
 
+#include <array>
+#include <cstdint>
+#include "SDL3/SDL.h"
 
 class VideoOutput
 {
@@ -15,9 +18,23 @@ class VideoOutput
         VideoOutput();
         virtual ~VideoOutput();
 
+        void clear();
+        void present();
+
+        void setPixel(int x, int y, uint8_t colorIndex);
+
     protected:
 
     private:
+        SDL_Window* window;
+        SDL_Renderer* renderer;
+        SDL_Texture* texture;
+
+        static constexpr int SCREEN_WIDTH  = 160;
+        static constexpr int SCREEN_HEIGHT = 144;
+        static constexpr int SCALE = 3;
+
+        std::array<uint32_t, SCREEN_WIDTH * SCREEN_HEIGHT> framebuffer;
 };
 
 #endif // VIDEOOUTPUT_H
