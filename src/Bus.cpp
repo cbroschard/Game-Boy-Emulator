@@ -50,6 +50,14 @@ uint8_t Bus::read(uint16_t address)
         return 0xFF;
     }
 
+    if (address == 0xFF00)
+    {
+        if (joypad)
+            return joypad->read();
+
+        return 0xFF;
+    }
+
     if (address >= EXTERNAL_RAM_START && address <= EXTERNAL_RAM_END)
     {
         if (cartridge)
@@ -94,6 +102,14 @@ void Bus::write(uint16_t address, uint8_t value)
     {
         if (cartridge)
             cartridge->writeROM(address, value); // MBC control write
+
+        return;
+    }
+
+    if (address == 0xFF00)
+    {
+        if (joypad)
+            joypad->write(value);
 
         return;
     }
