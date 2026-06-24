@@ -67,7 +67,7 @@ uint8_t Bus::read(uint16_t address)
     }
 
     if (address >= VRAM_START && address <= VRAM_END)
-        return memory->readVRAM(address - VRAM_START);
+        return ppu ? ppu->readVRAM(address - VRAM_START) : 0xFF;
 
     if (address >= WRAM_START && address <= WRAM_END)
         return memory->readWRAM(address - WRAM_START);
@@ -76,7 +76,7 @@ uint8_t Bus::read(uint16_t address)
         return memory->readWRAM(address - ECHO_RAM_START);
 
     if (address >= OAM_START && address <= OAM_END)
-        return memory->readOAM(address - OAM_START);
+        return ppu ? ppu->readOAM(address - OAM_START) : 0xFF;
 
     if (address >= UNUSABLE_START && address <= UNUSABLE_END)
         return 0xFF;
@@ -124,7 +124,9 @@ void Bus::write(uint16_t address, uint8_t value)
 
     if (address >= VRAM_START && address <= VRAM_END)
     {
-        memory->writeVRAM(address - VRAM_START, value);
+        if (ppu)
+            ppu->writeVRAM(address - VRAM_START, value);
+
         return;
     }
 
@@ -142,7 +144,9 @@ void Bus::write(uint16_t address, uint8_t value)
 
     if (address >= OAM_START && address <= OAM_END)
     {
-        memory->writeOAM(address - OAM_START, value);
+        if (ppu)
+            ppu->writeOAM(address - OAM_START, value);
+
         return;
     }
 
@@ -170,8 +174,24 @@ void Bus::write(uint16_t address, uint8_t value)
 
 uint8_t Bus::readIO(uint16_t address)
 {
+    if (address >= 0xFF10 && address <= 0xFF3F)
+        return apu ? apu->readRegister(address) : 0xFF;
+
     switch (address)
     {
+        case LCDC_REGISTER:
+        case STAT_REGISTER:
+        case SCY_REGISTER:
+        case SCX_REGISTER:
+        case LY_REGISTER:
+        case LYC_REGISTER:
+        case BGP_REGISTER:
+        case OBP0_REGISTER:
+        case OBP1_REGISTER:
+        case WY_REGISTER:
+        case WX_REGISTER:
+            return ppu ? ppu->readRegister(address) : 0xFF;
+
         case IF_REGISTER:
             return interruptStatus;
 
@@ -182,8 +202,49 @@ uint8_t Bus::readIO(uint16_t address)
 
 void Bus::writeIO(uint16_t address, uint8_t value)
 {
+    if (address >= 0xFF10 && address <= 0xFF3F)
+    {
+        if (apu)
+            apu->writeRegister(address, value);
+
+        memory->writeIO(address - IO_START, value);
+        return;
+    }
+
     switch (address)
     {
+        case LCDC_REGISTER:
+        case STAT_REGISTER:
+        case SCY_REGISTER:
+        case SCX_REGISTER:
+        case LY_REGISTER:
+        case LYC_REGISTER:
+        case BGP_REGISTER:
+        case OBP0_REGISTER:
+        case OBP1_REGISTER:
+        case WY_REGISTER:
+        case WX_REGISTER:
+            if (ppu)
+                ppu->writeRegister(address, value);
+                return;
+
+        case DMA_REGISTER:
+        {
+            memory->writeIO(address - IO_START, value);
+
+            uint16_t source = static_cast<uint16_t>(value) << 8;
+
+            for (uint16_t i = 0; i < 0xA0; i++)
+            {
+                uint8_t byte = read(source + i);
+
+                if (ppu)
+                    ppu->writeOAM(i, byte);
+            }
+
+            return;
+        }
+
         case IF_REGISTER:
             interruptStatus = value | 0xE0;
             memory->writeIO(address - IO_START, interruptStatus);
