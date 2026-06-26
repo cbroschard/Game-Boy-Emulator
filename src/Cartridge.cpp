@@ -7,6 +7,7 @@
 // strictly prohibited without the prior written consent of the author.
 #include <cstring>
 #include <fstream>
+#include <iostream>
 #include <stdexcept>
 #include "Cartridge.h"
 
@@ -58,6 +59,13 @@ bool Cartridge::loadCartridge(const std::string& path)
 
     determineCartridgeType(type);
 
+    std::cout
+    << std::hex
+    << "Cartridge type=$" << int(type)
+    << " ROM size code=$" << int(romSizeCode)
+    << " RAM size code=$" << int(ramSizeCode)
+    << "\n";
+
     const size_t expectedROMSize = getROMSizeFromCode(romSizeCode);
 
     if (expectedROMSize == 0)
@@ -80,19 +88,22 @@ uint8_t Cartridge::readROM(uint16_t address)
     if (cartridgeROM.empty())
         return 0xFF;
 
-    switch (mapperType)
+    // Fixed ROM bank 0: $0000-$3FFF
+    // This must work for ROMOnly, MBC1, MBC3, MBC5, etc.
+    if (address <= 0x3FFF)
     {
-        case MapperType::ROMOnly:
-        {
-            if (address >= cartridgeROM.size())
-                return 0xFF;
+        if (address >= cartridgeROM.size())
+            return 0xFF;
 
-            return cartridgeROM[address];
-        }
+        return cartridgeROM[address];
+    }
 
-        case MapperType::MBC1:
+    // Switchable ROM bank area: $4000-$7FFF
+    if (address <= 0x7FFF)
+    {
+        switch (mapperType)
         {
-            if (address <= 0x3FFF)
+            case MapperType::ROMOnly:
             {
                 if (address >= cartridgeROM.size())
                     return 0xFF;
@@ -100,7 +111,7 @@ uint8_t Cartridge::readROM(uint16_t address)
                 return cartridgeROM[address];
             }
 
-            if (address <= 0x7FFF)
+            case MapperType::MBC1:
             {
                 const size_t bankOffset = size_t(selectedROMBank) * 0x4000;
                 const size_t romOffset = bankOffset + (address - 0x4000);
@@ -111,12 +122,26 @@ uint8_t Cartridge::readROM(uint16_t address)
                 return cartridgeROM[romOffset];
             }
 
-            return 0xFF;
-        }
+            case MapperType::MBC3:
+            case MapperType::MBC5:
+            {
+                // Temporary simple support so boot can complete.
+                // Full MBC3/MBC5 write handling can come later.
+                const size_t bankOffset = size_t(selectedROMBank) * 0x4000;
+                const size_t romOffset = bankOffset + (address - 0x4000);
 
-        default:
-            return 0xFF;
+                if (romOffset >= cartridgeROM.size())
+                    return 0xFF;
+
+                return cartridgeROM[romOffset];
+            }
+
+            default:
+                return 0xFF;
+        }
     }
+
+    return 0xFF;
 }
 
 void Cartridge::writeROM(uint16_t address, uint8_t value)
@@ -143,6 +168,31 @@ void Cartridge::writeROM(uint16_t address, uint8_t value)
             else if (address <= 0x7FFF)
             {
                 bankingMode = value & 0x01;
+            }
+
+            break;
+        }
+
+        case MapperType::MBC3:
+        {
+            if (address <= 0x1FFF)
+            {
+                ramEnabled = ((value & 0x0F) == 0x0A);
+            }
+            else if (address <= 0x3FFF)
+            {
+                selectedROMBank = value & 0x7F;
+
+                if (selectedROMBank == 0)
+                    selectedROMBank = 1;
+            }
+            else if (address <= 0x5FFF)
+            {
+                selectedRAMBank = value & 0x0F;
+            }
+            else if (address <= 0x7FFF)
+            {
+                // RTC latch area for MBC3.
             }
 
             break;
