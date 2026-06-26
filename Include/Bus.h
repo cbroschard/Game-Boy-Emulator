@@ -23,6 +23,15 @@ class Bus
         Bus();
         virtual ~Bus();
 
+        enum class Interrupt : uint8_t
+        {
+            VBlank,
+            LCDStat,
+            Timer,
+            Serial,
+            Joypad
+        };
+
         inline void attachAPUInstance(APU* apu) { this->apu = apu; }
         inline void attachCartridgeInstance(Cartridge* cartridge) { this->cartridge = cartridge; }
         inline void attachJoypadInstance(Joypad* joypad) { this->joypad = joypad; }
@@ -30,10 +39,22 @@ class Bus
         inline void attachPPUInstance(PPU* ppu) { this->ppu = ppu; }
         inline void attachTimerInstance(Timer* timer) { this->timer = timer; }
 
+        inline bool hasAPU() const { return apu ? 1 : 0; }
+        inline bool hasCartridge() const { return cartridge ? 1 : 0; }
+        inline bool hasJoypad() const { return joypad ? 1 : 0; }
+        inline bool hasMemory() const { return memory ? 1 : 0; }
+        inline bool hasPPU() const { return ppu ? 1 : 0; }
+        inline bool hasTimer() const { return timer ? 1 : 0; }
+
         void reset();
 
         uint8_t read(uint16_t address);
         void write(uint16_t address, uint8_t value);
+
+        void requestInterrupt(Interrupt interrupt);
+        void clearInterrupt(Interrupt interrupt);
+
+        inline uint8_t getInterruptFlags() const { return interruptStatus | 0xE0; }
 
     protected:
 

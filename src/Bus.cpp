@@ -11,6 +11,7 @@
 #include "Joypad.h"
 #include "Memory.h"
 #include "PPU.h"
+#include "Timer.h"
 
 Bus::Bus() :
     apu(nullptr),
@@ -179,6 +180,12 @@ uint8_t Bus::readIO(uint16_t address)
 
     switch (address)
     {
+        case DIV_REGISTER:
+        case TIMA_REGISTER:
+        case TMA_REGISTER:
+        case TAC_REGISTER:
+            return timer ? timer->readRegister(address) : 0xFF;
+
         case LCDC_REGISTER:
         case STAT_REGISTER:
         case SCY_REGISTER:
@@ -193,7 +200,7 @@ uint8_t Bus::readIO(uint16_t address)
             return ppu ? ppu->readRegister(address) : 0xFF;
 
         case IF_REGISTER:
-            return interruptStatus;
+            return interruptStatus | 0xE0;
 
         default:
             return memory->readIO(address - IO_START);
@@ -213,6 +220,16 @@ void Bus::writeIO(uint16_t address, uint8_t value)
 
     switch (address)
     {
+        case DIV_REGISTER:
+        case TIMA_REGISTER:
+        case TMA_REGISTER:
+        case TAC_REGISTER:
+        {
+            if (timer)
+                timer->writeRegister(address, value);
+            return;
+        }
+
         case LCDC_REGISTER:
         case STAT_REGISTER:
         case SCY_REGISTER:
@@ -224,9 +241,11 @@ void Bus::writeIO(uint16_t address, uint8_t value)
         case OBP1_REGISTER:
         case WY_REGISTER:
         case WX_REGISTER:
+        {
             if (ppu)
                 ppu->writeRegister(address, value);
-                return;
+            return;
+        }
 
         case DMA_REGISTER:
         {
@@ -262,4 +281,30 @@ void Bus::writeIO(uint16_t address, uint8_t value)
             memory->writeIO(address - IO_START, value);
             return;
     }
+}
+
+void Bus::requestInterrupt(Interrupt interrupt)
+{
+    const uint8_t bit = static_cast<uint8_t>(interrupt);
+
+    if (bit > 4)
+        return;
+
+    interruptStatus |= static_cast<uint8_t>(1 << bit);
+
+    // Upper bits of IF read back as 1 on DMG.
+    interruptStatus |= 0xE0;
+}
+
+void Bus::clearInterrupt(Interrupt interrupt)
+{
+    const uint8_t bit = static_cast<uint8_t>(interrupt);
+
+    if (bit > 4)
+        return;
+
+    interruptStatus &= static_cast<uint8_t>(~(1 << bit));
+
+    // Keep unused bits high.
+    interruptStatus |= 0xE0;
 }
