@@ -146,6 +146,12 @@ void VideoOutput::present()
     SDL_RenderPresent(renderer);
 }
 
+void VideoOutput::renderFrame(const std::array<uint32_t, SCREEN_WIDTH * SCREEN_HEIGHT>& pixels)
+{
+    framebuffer = pixels;
+    present();
+}
+
 void VideoOutput::setPixel(int x, int y, uint8_t colorIndex)
 {
     if (x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT)

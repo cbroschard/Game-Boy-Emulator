@@ -18,8 +18,14 @@ class VideoOutput
         VideoOutput();
         virtual ~VideoOutput();
 
+        static constexpr int SCREEN_WIDTH  = 160;
+        static constexpr int SCREEN_HEIGHT = 144;
+        static constexpr int SCALE = 3;
+
         void clear();
         void present();
+
+        void renderFrame(const std::array<uint32_t, SCREEN_WIDTH * SCREEN_HEIGHT>& pixels);
 
         void setPixel(int x, int y, uint8_t colorIndex);
 
@@ -29,10 +35,6 @@ class VideoOutput
         SDL_Window* window;
         SDL_Renderer* renderer;
         SDL_Texture* texture;
-
-        static constexpr int SCREEN_WIDTH  = 160;
-        static constexpr int SCREEN_HEIGHT = 144;
-        static constexpr int SCALE = 3;
 
         std::array<uint32_t, SCREEN_WIDTH * SCREEN_HEIGHT> framebuffer;
 };
