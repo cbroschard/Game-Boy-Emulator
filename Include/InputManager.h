@@ -19,6 +19,8 @@ class InputManager
 
         inline void attachJoypadInstance(Joypad* joypad) { this->joypad = joypad; }
 
+        inline bool hasJoypad() const { return joypad ? 1 : 0; }
+
         void reset();
 
         void handleEvent(const SDL_Event& event);
