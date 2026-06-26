@@ -23,6 +23,8 @@ class CPU
         void reset();
         int step();
 
+        inline bool hasBus() const { return bus ? 1 : 0; }
+
         // Getters
         inline uint16_t getSP() const { return SP; }
         inline uint16_t getPC() const { return PC; }
@@ -105,6 +107,8 @@ class CPU
         // Stack helpers
         void push16(uint16_t value);
         uint16_t pop16();
+
+        int serviceInterrupts();
 
         inline void ret() { setPC(pop16()); }
 

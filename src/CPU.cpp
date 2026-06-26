@@ -40,8 +40,31 @@ void CPU::reset()
 
 int CPU::step()
 {
+    if (!bus)
+    {
+        std::cerr << "CPU bus not attached\n";
+        return 4;
+    }
+
+    int interruptCycles = serviceInterrupts();
+
+    if (interruptCycles > 0)
+        return interruptCycles;
+
+    if (halted)
+        return 4;
+
     uint8_t opcode = fetch8();
-    return decodeExecute(opcode);
+
+    int cycles = decodeExecute(opcode);
+
+    if (imeEnablePending)
+    {
+        IME = true;
+        imeEnablePending = false;
+    }
+
+    return cycles;
 }
 
 uint8_t CPU::fetch8()
@@ -3334,6 +3357,67 @@ uint16_t CPU::pop16()
     setSP(uint16_t(getSP() + 1));
 
     return uint16_t(lo) | (uint16_t(hi) << 8);
+}
+
+int CPU::serviceInterrupts()
+{
+    uint8_t interruptFlags  = bus->read(0xFF0F);
+    uint8_t interruptEnable = bus->read(0xFFFF);
+
+    uint8_t pending = interruptFlags & interruptEnable & 0x1F;
+
+    if (pending == 0)
+        return 0;
+
+    halted = false;
+
+    if (!IME)
+        return 0;
+
+    IME = false;
+    imeEnablePending = false;
+
+    if (pending & 0x01)
+    {
+        bus->write(0xFF0F, interruptFlags & ~0x01);
+        push16(PC);
+        PC = 0x0040;
+        return 20;
+    }
+
+    if (pending & 0x02)
+    {
+        bus->write(0xFF0F, interruptFlags & ~0x02);
+        push16(PC);
+        PC = 0x0048;
+        return 20;
+    }
+
+    if (pending & 0x04)
+    {
+        bus->write(0xFF0F, interruptFlags & ~0x04);
+        push16(PC);
+        PC = 0x0050;
+        return 20;
+    }
+
+    if (pending & 0x08)
+    {
+        bus->write(0xFF0F, interruptFlags & ~0x08);
+        push16(PC);
+        PC = 0x0058;
+        return 20;
+    }
+
+    if (pending & 0x10)
+    {
+        bus->write(0xFF0F, interruptFlags & ~0x10);
+        push16(PC);
+        PC = 0x0060;
+        return 20;
+    }
+
+    return 0;
 }
 
 void CPU::add8(uint8_t value)
