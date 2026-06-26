@@ -14,8 +14,10 @@
 #include "Bus.h"
 #include "Cartridge.h"
 #include "CPU.h"
+#include "InputManager.h"
 #include "Joypad.h"
-#include "memory.h"
+#include "Memory.h"
+#include "SDL3/SDL.h"
 #include "PPU.h"
 #include "Timer.h"
 #include "VideoOutput.h"
@@ -26,11 +28,14 @@ class EmulationSession
         EmulationSession();
         virtual ~EmulationSession();
 
+        void reset();
+
         void run();
 
-        void setBIOSPath(const std::string& path);
+        inline void setBIOSPath(const std::string& path) { biosPath = path; }
+        inline void setCartridgePath(const std::string &path) { cartridgePath = path; }
 
-        void loadCartridge(const std::string& path);
+        inline bool loadCartridge(const std::string& path) { return cartridge.loadCartridge(path); }
 
     protected:
 
@@ -40,13 +45,20 @@ class EmulationSession
         Bus bus;
         Cartridge cartridge;
         CPU cpu;
+        InputManager inputMgr;
         Joypad joypad;
         Memory memory;
         PPU ppu;
         Timer timer;
         VideoOutput videoOutput;
 
+        std::string biosPath;
+        std::string cartridgePath;
+
         void wireUp();
+        void validateWiring() const;
+
+        inline bool loadBIOS(const std::string& path) { return memory.loadBIOS(path); }
 };
 
 #endif // EMULATIONSESSION_H
