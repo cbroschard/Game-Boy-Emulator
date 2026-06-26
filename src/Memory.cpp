@@ -22,9 +22,7 @@ Memory::~Memory()
 
 void Memory::reset()
 {
-    vram.fill(0x00);
     wram.fill(0x00);
-    oam.fill(0x00);
     io.fill(0x00);
     hram.fill(0x00);
 
