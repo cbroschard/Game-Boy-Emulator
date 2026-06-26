@@ -10,6 +10,8 @@
 
 #include <cstdint>
 
+class Bus;
+
 class Timer
 {
     public:
