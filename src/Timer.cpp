@@ -94,7 +94,8 @@ void Timer::writeRegister(uint16_t address, uint8_t value)
     {
         case 0xFF04:
         {
-            div = value;
+            div = 0;
+            divCounter = 0;
             return;
         }
 
