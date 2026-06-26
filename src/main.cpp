@@ -57,7 +57,7 @@ int main()
         }
 
         session.setBIOSPath(vmConfig["BIOS"].as<std::string>());
-        session.loadCartridge(vmConfig["Cartridge"].as<std::string>());
+        session.setCartridgePath(vmConfig["Cartridge"].as<std::string>());
         session.run();
 
         return 0;
