@@ -47,6 +47,9 @@ void EmulationSession::run()
 
     reset();
 
+    if (!audioOutput.playAudio())
+        throw std::runtime_error("Failed to start audio output.");
+
     constexpr int CPU_CLOCK_HZ = 4194304;
 
     constexpr int CYCLES_PER_SCANLINE = 456;
