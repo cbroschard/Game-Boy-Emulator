@@ -27,7 +27,81 @@ void APU::reset()
 
 void APU::tick(int cyclesElapsed)
 {
+    if (!apuEnabled)
+        return;
 
+    while (cyclesElapsed > 0)
+    {
+        if (channel1.enabled)
+        {
+            if (channel1.periodDivider > 0)
+                channel1.periodDivider--;
+
+            if (channel1.periodDivider == 0)
+            {
+                uint16_t frequency = registers.nr13 | ((registers.nr14 & 0x07) << 8);
+                channel1.periodDivider = (2048 - frequency) * 4;
+
+                channel1.dutyPosition = (channel1.dutyPosition + 1) & 0x07;
+            }
+        }
+
+        if (channel2.enabled)
+        {
+            if (channel2.periodDivider > 0)
+                channel2.periodDivider--;
+
+            if (channel2.periodDivider == 0)
+            {
+                uint16_t frequency = registers.nr23 | ((registers.nr24 & 0x07) << 8);
+                channel2.periodDivider = (2048 - frequency) * 4;
+
+                channel2.dutyPosition = (channel2.dutyPosition + 1) & 0x07;
+            }
+        }
+
+        if (channel3.enabled)
+        {
+            if (channel3.periodDivider > 0)
+                channel3.periodDivider--;
+
+            if (channel3.periodDivider == 0)
+            {
+                uint16_t frequency = registers.nr33 | ((registers.nr34 & 0x07) << 8);
+                channel3.periodDivider = (2048 - frequency) * 2;
+
+                channel3.wavePosition = (channel3.wavePosition + 1) & 0x1F;
+            }
+        }
+
+        if (channel4.enabled)
+        {
+            if (channel4.periodDivider > 0)
+                channel4.periodDivider--;
+
+            if (channel4.periodDivider == 0)
+            {
+                uint8_t baseDivisor = getNoiseBaseDivisor(registers.nr43 & 0x07);
+                uint8_t clockShift = registers.nr43 >> 4;
+                channel4.periodDivider = baseDivisor << clockShift;
+
+                uint8_t bit0 = channel4.lfsr & 0x01;
+                uint8_t bit1 = (channel4.lfsr >> 1) & 0x01;
+                uint8_t xorResult = bit0 ^ bit1;
+
+                channel4.lfsr >>= 1;
+                channel4.lfsr |= (xorResult << 14);
+
+                if (channel4.widthMode)
+                {
+                    channel4.lfsr &= ~(1 << 6);
+                    channel4.lfsr |= (xorResult << 6);
+                }
+            }
+        }
+
+        cyclesElapsed--;
+    }
 }
 
 uint8_t APU::readRegister(uint16_t address) const
