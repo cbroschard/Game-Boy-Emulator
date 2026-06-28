@@ -107,6 +107,9 @@ class APU
 
         int frameSequencerCounter;
         uint8_t frameSequencerStep;
+        int sampleCounter;
+
+        static constexpr int cyclesPerSample = 95;
 
         void powerOn();
         void powerOff();
@@ -117,9 +120,18 @@ class APU
         void clockEnvelopes();
         void clockSweep();
 
+        int getChannel1Output() const;
+        int getChannel2Output() const;
+        int getChannel3Output() const;
+        int getChannel4Output() const;
+
+        // Sample generation
+        void mixSample();
+
         // Helpers
         void clearState();
-        uint8_t getNoiseBaseDivisor(uint8_t value);
+        uint8_t getNoiseBaseDivisor(uint8_t value) const;
+        uint8_t getDutyPattern(uint8_t value) const;
 };
 
 #endif // APU_H

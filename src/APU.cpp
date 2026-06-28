@@ -12,7 +12,8 @@ APU::APU() :
     audioOutput(nullptr),
     apuEnabled(true),
     frameSequencerCounter(0),
-    frameSequencerStep(0)
+    frameSequencerStep(0),
+    sampleCounter(0)
 {
     reset();
 }
@@ -28,6 +29,7 @@ void APU::reset()
 
     frameSequencerCounter   = 0;
     frameSequencerStep      = 0;
+    sampleCounter           = 0;
 }
 
 void APU::tick(int cyclesElapsed)
@@ -43,6 +45,14 @@ void APU::tick(int cyclesElapsed)
         {
             frameSequencerCounter = 0;
             clockFrameSequencer();
+        }
+
+        sampleCounter++;
+
+        if (sampleCounter >= cyclesPerSample)
+        {
+            sampleCounter -= cyclesPerSample;
+            mixSample();
         }
 
         if (channel1.enabled)
@@ -631,6 +641,103 @@ void APU::clockSweep()
 
 }
 
+int APU::getChannel1Output() const
+{
+    if (!channel1.enabled || !channel1.dacEnabled)
+        return 0;
+
+    uint8_t pattern = getDutyPattern(channel1.duty);
+    bool high = (pattern >> channel1.dutyPosition) & 0x01;
+
+    return high ? channel1.currentVolume : 0;
+}
+
+int APU::getChannel2Output() const
+{
+    if (!channel2.enabled || !channel2.dacEnabled)
+        return 0;
+
+    uint8_t pattern = getDutyPattern(channel2.duty);
+    bool high = (pattern >> channel2.dutyPosition) & 0x01;
+
+    return high ? channel2.currentVolume : 0;
+}
+
+int APU::getChannel3Output() const
+{
+    if (!channel3.enabled || !channel3.dacEnabled)
+        return 0;
+
+    uint8_t byteIndex = channel3.wavePosition / 2;
+    uint8_t waveByte = registers.waveRAM[byteIndex];
+
+    uint8_t sample = 0;
+
+    if ((channel3.wavePosition & 0x01) == 0)
+        sample = waveByte >> 4;
+    else
+        sample = waveByte & 0x0F;
+
+    switch (channel3.outputLevel)
+    {
+        case 0: return 0;
+        case 1: return sample;
+        case 2: return sample >> 1;
+        case 3: return sample >> 2;
+        default: return 0;
+    }
+}
+
+int APU::getChannel4Output() const
+{
+    if (!channel4.enabled || !channel4.dacEnabled)
+        return 0;
+
+    if ((channel4.lfsr & 0x01) == 0)
+        return channel4.currentVolume;
+    else
+        return 0;
+}
+
+void APU::mixSample()
+{
+    if (!audioOutput)
+        return;
+
+    int ch1 = getChannel1Output();
+    int ch2 = getChannel2Output();
+    int ch3 = getChannel3Output();
+    int ch4 = getChannel4Output();
+
+    int right = 0;
+    int left  = 0;
+
+    // NR51 bits 0-3 route channels 1-4 to right
+    if (registers.nr51 & 0x01) right += ch1;
+    if (registers.nr51 & 0x02) right += ch2;
+    if (registers.nr51 & 0x04) right += ch3;
+    if (registers.nr51 & 0x08) right += ch4;
+
+    // NR51 bits 4-7 route channels 1-4 to left
+    if (registers.nr51 & 0x10) left += ch1;
+    if (registers.nr51 & 0x20) left += ch2;
+    if (registers.nr51 & 0x40) left += ch3;
+    if (registers.nr51 & 0x80) left += ch4;
+
+    int rightVolume = (registers.nr50 & 0x07) + 1;
+    int leftVolume  = ((registers.nr50 >> 4) & 0x07) + 1;
+
+    right *= rightVolume;
+    left  *= leftVolume;
+
+    constexpr int SCALE = 64;
+
+    int16_t leftSample  = static_cast<int16_t>(left * SCALE);
+    int16_t rightSample = static_cast<int16_t>(right * SCALE);
+
+    audioOutput->queueSample(leftSample, rightSample);
+}
+
 void APU::clearState()
 {
     // Clear registers
@@ -706,7 +813,7 @@ void APU::clearState()
     channel4.widthMode     = false;
 }
 
-uint8_t APU::getNoiseBaseDivisor(uint8_t value)
+uint8_t APU::getNoiseBaseDivisor(uint8_t value) const
 {
     switch (value)
     {
@@ -719,5 +826,17 @@ uint8_t APU::getNoiseBaseDivisor(uint8_t value)
         case 6: return 96;
         case 7: return 112;
         default: return 8;
+    }
+}
+
+uint8_t APU::getDutyPattern(uint8_t value) const
+{
+    switch (value)
+    {
+        case 0: return 0b00000001;
+        case 1: return 0b10000001;
+        case 2: return 0b10000111;
+        case 3: return 0b01111110;
+        default: return 0b00000001;
     }
 }
