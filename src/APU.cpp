@@ -10,7 +10,9 @@
 
 APU::APU() :
     audioOutput(nullptr),
-    apuEnabled(true)
+    apuEnabled(true),
+    frameSequencerCounter(0),
+    frameSequencerStep(0)
 {
     reset();
 }
@@ -21,8 +23,11 @@ void APU::reset()
 {
     clearState();
 
-    apuEnabled = true;
-    registers.nr52 = 0x80;
+    apuEnabled              = true;
+    registers.nr52          = 0x80;
+
+    frameSequencerCounter   = 0;
+    frameSequencerStep      = 0;
 }
 
 void APU::tick(int cyclesElapsed)
@@ -32,6 +37,14 @@ void APU::tick(int cyclesElapsed)
 
     while (cyclesElapsed > 0)
     {
+        frameSequencerCounter++;
+
+        if (frameSequencerCounter >= 8192)
+        {
+            frameSequencerCounter = 0;
+            clockFrameSequencer();
+        }
+
         if (channel1.enabled)
         {
             if (channel1.periodDivider > 0)
@@ -454,6 +467,168 @@ void APU::powerOff()
 
     apuEnabled = false;
     registers.nr52 = 0x00;
+}
+
+void APU::clockFrameSequencer()
+{
+    switch (frameSequencerStep)
+    {
+        case 0:
+            clockLengthCounters();
+            break;
+
+        case 1:
+            break;
+
+        case 2:
+        {
+            clockLengthCounters();
+            clockSweep();
+            break;
+        }
+
+        case 3:
+            break;
+
+        case 4:
+            clockLengthCounters();
+            break;
+
+        case 5:
+            break;
+
+        case 6:
+        {
+            clockLengthCounters();
+            clockSweep();
+            break;
+        }
+
+        case 7:
+            clockEnvelopes();
+            break;
+    }
+
+    frameSequencerStep = (frameSequencerStep + 1) & 0x07;
+}
+
+void APU::clockLengthCounters()
+{
+    if (channel1.lengthEnabled && channel1.lengthCounter > 0)
+    {
+        channel1.lengthCounter--;
+
+        if (channel1.lengthCounter == 0)
+            channel1.enabled = false;
+
+    }
+
+    if (channel2.lengthEnabled && channel2.lengthCounter > 0)
+    {
+        channel2.lengthCounter--;
+
+        if (channel2.lengthCounter == 0)
+            channel2.enabled = false;
+    }
+
+    if (channel3.lengthEnabled && channel3.lengthCounter > 0)
+    {
+        channel3.lengthCounter--;
+
+        if (channel3.lengthCounter == 0)
+            channel3.enabled = false;
+    }
+
+    if (channel4.lengthEnabled && channel4.lengthCounter > 0)
+    {
+        channel4.lengthCounter--;
+
+        if (channel4.lengthCounter == 0)
+            channel4.enabled = false;
+    }
+}
+
+void APU::clockEnvelopes()
+{
+    uint8_t period = registers.nr12 & 0x07;
+
+    if (period != 0 && channel1.envelopeTimer > 0)
+    {
+        channel1.envelopeTimer--;
+
+        if (channel1.envelopeTimer == 0)
+        {
+            channel1.envelopeTimer = period;
+
+            bool increase = (registers.nr12 & 0x08) != 0;
+
+            if (increase)
+            {
+                if (channel1.currentVolume < 15)
+                    channel1.currentVolume++;
+            }
+            else
+            {
+                if (channel1.currentVolume > 0)
+                    channel1.currentVolume--;
+            }
+        }
+    }
+
+    period = registers.nr22 & 0x07;
+
+    if (period != 0 && channel2.envelopeTimer > 0)
+    {
+        channel2.envelopeTimer--;
+
+        if (channel2.envelopeTimer == 0)
+        {
+            channel2.envelopeTimer = period;
+
+            bool increase = (registers.nr22 & 0x08) != 0;
+
+            if (increase)
+            {
+                if (channel2.currentVolume < 15)
+                    channel2.currentVolume++;
+            }
+            else
+            {
+                if (channel2.currentVolume > 0)
+                    channel2.currentVolume--;
+            }
+        }
+    }
+
+    period = registers.nr42 & 0x07;
+
+    if (period != 0 && channel4.envelopeTimer > 0)
+    {
+        channel4.envelopeTimer--;
+
+        if (channel4.envelopeTimer == 0)
+        {
+            channel4.envelopeTimer = period;
+
+            bool increase = (registers.nr42 & 0x08) != 0;
+
+            if (increase)
+            {
+                if (channel4.currentVolume < 15)
+                    channel4.currentVolume++;
+            }
+            else
+            {
+                if (channel4.currentVolume > 0)
+                    channel4.currentVolume--;
+            }
+        }
+    }
+}
+
+void APU::clockSweep()
+{
+
 }
 
 void APU::clearState()

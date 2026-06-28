@@ -105,8 +105,17 @@ class APU
         WaveChannel channel3;
         NoiseChannel channel4;
 
+        int frameSequencerCounter;
+        uint8_t frameSequencerStep;
+
         void powerOn();
         void powerOff();
+
+        // Tick helpers
+        void clockFrameSequencer();
+        void clockLengthCounters();
+        void clockEnvelopes();
+        void clockSweep();
 
         // Helpers
         void clearState();
