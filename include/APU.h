@@ -20,15 +20,97 @@ class APU
 
         inline void attachAudioOutputInstance(AudioOutput* audioOutput) { this->audioOutput = audioOutput; }
 
-        void tick(int cycles);
+        inline bool hasAudioOutput() const { return audioOutput ? 1 : 0; }
 
-        uint8_t readRegister(uint16_t address);
+        void reset();
+
+        void tick(int cyclesElapsed);
+
+        uint8_t readRegister(uint16_t address) const;
         void writeRegister(uint16_t address, uint8_t value);
 
     protected:
 
     private:
         AudioOutput* audioOutput;
+
+        struct Registers
+        {
+            uint8_t nr10;
+            uint8_t nr11;
+            uint8_t nr12;
+            uint8_t nr13;
+            uint8_t nr14;
+
+            uint8_t nr21;
+            uint8_t nr22;
+            uint8_t nr23;
+            uint8_t nr24;
+
+            uint8_t nr30;
+            uint8_t nr31;
+            uint8_t nr32;
+            uint8_t nr33;
+            uint8_t nr34;
+
+            uint8_t nr41;
+            uint8_t nr42;
+            uint8_t nr43;
+            uint8_t nr44;
+
+            uint8_t nr50;
+            uint8_t nr51;
+            uint8_t nr52;
+
+            uint8_t waveRAM[16];
+        } registers;
+
+        bool apuEnabled;
+
+        struct APUChannel
+        {
+            bool enabled;
+            bool dacEnabled;
+
+            bool lengthEnabled;
+            uint16_t lengthCounter;
+
+            uint16_t periodDivider;
+        };
+
+        struct SquareChannel : APUChannel
+        {
+            uint8_t duty;
+            uint8_t dutyPosition;
+            uint8_t currentVolume;
+            uint8_t envelopeTimer;
+        };
+
+        struct WaveChannel : APUChannel
+        {
+            uint8_t wavePosition;
+            uint8_t outputLevel;
+        };
+
+        struct NoiseChannel : APUChannel
+        {
+            uint8_t currentVolume;
+            uint16_t lfsr;
+            uint8_t envelopeTimer;
+            bool widthMode;
+        };
+
+        SquareChannel channel1;
+        SquareChannel channel2;
+        WaveChannel channel3;
+        NoiseChannel channel4;
+
+        void powerOn();
+        void powerOff();
+
+        // Helpers
+        void clearState();
+        uint8_t getNoiseBaseDivisor(uint8_t value);
 };
 
 #endif // APU_H
