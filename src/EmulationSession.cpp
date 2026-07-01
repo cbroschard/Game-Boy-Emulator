@@ -84,7 +84,32 @@ void EmulationSession::run()
                     break;
                 }
 
+                // F12 toggles the ML monitor window.
+                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_F12)
+                {
+                    monitorController.toggleMonitor();
+                    continue;
+                }
+
+                // Let monitor receive typing, close-window events, etc.
+                if (monitorController.handleEvent(event))
+                    continue;
+
                 inputMgr.handleEvent(event);
+            }
+
+            /*
+                If the monitor is open, pause the emulated machine.
+
+                We still tick/render the monitor window so it remains responsive,
+                but we do NOT step the CPU, tick the VDP, update IRQs, queue audio,
+                or advance the emulated frame.
+            */
+            if (monitorController.isOpen())
+            {
+                monitorController.tick();
+                SDL_Delay(16);
+                continue;
             }
 
             if (!running)
@@ -151,6 +176,19 @@ void EmulationSession::wireUp()
     cpu.attachBusInstance(&bus);
 
     inputMgr.attachJoypadInstance(&joypad);
+
+    mlMonitor.attachMLMonitorBackendInstance(&mlmonitorBackend);
+
+    mlmonitorBackend.attachAPUInstance(&apu);
+    mlmonitorBackend.attachCartridgeInstance(&cartridge);
+    mlmonitorBackend.attachCPUInstance(&cpu);
+    mlmonitorBackend.attachEmulationSessionInstance(this);
+    mlmonitorBackend.attachInputManagerInstance(&inputMgr);
+    mlmonitorBackend.attachMemoryInstance(&memory);
+    mlmonitorBackend.attachPPUInstance(&ppu);
+    mlmonitorBackend.attachTimerInstance(&timer);
+
+    monitorController.attachMLMonitorInstance(&mlMonitor);
 
     ppu.attachBusInstance(&bus);
 

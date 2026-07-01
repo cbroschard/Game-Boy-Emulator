@@ -17,6 +17,9 @@
 #include "InputManager.h"
 #include "Joypad.h"
 #include "Memory.h"
+#include "Debug/MLMonitor.h"
+#include "Debug/MLMonitorBackend.h"
+#include "MonitorController.h"
 #include "SDL3/SDL.h"
 #include "PPU.h"
 #include "Timer.h"
@@ -37,6 +40,9 @@ class EmulationSession
 
         inline bool loadCartridge(const std::string& path) { return cartridge.loadCartridge(path); }
 
+        // ML Monitor
+        inline void enterMonitor() { monitorController.openMonitor(); }
+
     protected:
 
     private:
@@ -48,6 +54,9 @@ class EmulationSession
         InputManager inputMgr;
         Joypad joypad;
         Memory memory;
+        MLMonitor mlMonitor;
+        MLMonitorBackend mlmonitorBackend;
+        MonitorController monitorController;
         PPU ppu;
         Timer timer;
         VideoOutput videoOutput;
