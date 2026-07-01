@@ -11,7 +11,6 @@
 #include <cstdint>
 
 class Bus;
-
 struct lr35902CPUState
 {
     uint16_t SP = 0;
@@ -30,6 +29,11 @@ struct lr35902CPUState
     uint8_t  E  = 0;
     uint8_t  H  = 0;
     uint8_t  L  = 0;
+
+    bool flagZ = false;
+    bool flagN = false;
+    bool flagH = false;
+    bool flagC = false;
 
     uint64_t cycles = 0;
 

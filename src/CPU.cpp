@@ -91,6 +91,11 @@ lr35902CPUState CPU::getCPUState() const
     state.H = getH();
     state.L = getL();
 
+    state.flagZ = getFlag(Flags::Z);
+    state.flagN = getFlag(Flags::N);
+    state.flagH = getFlag(Flags::H);
+    state.flagC = getFlag(Flags::C);
+
     state.cycles = cycles;
 
     state.halted = halted;
