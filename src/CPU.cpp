@@ -11,6 +11,7 @@
 
 CPU::CPU() :
     bus(nullptr),
+    cycles(0),
     halted(false),
     stopped(false),
     IME(false),
@@ -30,6 +31,8 @@ void CPU::reset()
     HL                  = 0x0000;
     SP                  = 0x0000;
     PC                  = 0x0000;
+
+    cycles              = 0;
 
     halted              = false;
     stopped             = false;
@@ -56,7 +59,7 @@ int CPU::step()
 
     uint8_t opcode = fetch8();
 
-    int cycles = decodeExecute(opcode);
+    cycles = decodeExecute(opcode);
 
     if (imeEnablePending)
     {
@@ -65,6 +68,37 @@ int CPU::step()
     }
 
     return cycles;
+}
+
+lr35902CPUState CPU::getCPUState() const
+{
+    lr35902CPUState state;
+
+    state.SP = SP;
+    state.PC = PC;
+
+    state.AF = AF;
+    state.BC = BC;
+    state.DE = DE;
+    state.HL = HL;
+
+    state.A = getA();
+    state.F = getF();
+    state.B = getB();
+    state.C = getC();
+    state.D = getD();
+    state.E = getE();
+    state.H = getH();
+    state.L = getL();
+
+    state.cycles = cycles;
+
+    state.halted = halted;
+    state.stopped = stopped;
+    state.IME = IME;
+    state.imeEnablePending = imeEnablePending;
+
+    return state;
 }
 
 uint8_t CPU::fetch8()

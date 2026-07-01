@@ -12,6 +12,33 @@
 
 class Bus;
 
+struct lr35902CPUState
+{
+    uint16_t SP = 0;
+    uint16_t PC = 0;
+
+    uint16_t AF = 0;
+    uint16_t BC = 0;
+    uint16_t DE = 0;
+    uint16_t HL = 0;
+
+    uint8_t  A  = 0;
+    uint8_t  F  = 0;
+    uint8_t  B  = 0;
+    uint8_t  C  = 0;
+    uint8_t  D  = 0;
+    uint8_t  E  = 0;
+    uint8_t  H  = 0;
+    uint8_t  L  = 0;
+
+    uint64_t cycles = 0;
+
+    bool halted = false;
+    bool stopped = false;
+    bool IME = false;
+    bool imeEnablePending = false;
+};
+
 class CPU
 {
     public:
@@ -25,15 +52,19 @@ class CPU
 
         inline bool hasBus() const { return bus ? 1 : 0; }
 
-        // Getters
+        // ML Monitor API
+        inline uint16_t getAF() const { return AF; }
+        inline uint16_t getBC() const { return BC; }
+        inline uint16_t getDE() const { return DE; }
+        inline uint16_t getHL() const { return HL; }
+
         inline uint16_t getSP() const { return SP; }
         inline uint16_t getPC() const { return PC; }
 
-        // ML Monitor API
-        uint16_t getAF() const { return AF; }
-        uint16_t getBC() const { return BC; }
-        uint16_t getDE() const { return DE; }
-        uint16_t getHL() const { return HL; }
+        inline void setSP(uint16_t value) { SP = value; }
+        inline void setPC(uint16_t value) { PC = value; }
+
+        lr35902CPUState getCPUState() const;
 
     protected:
 
@@ -55,6 +86,8 @@ class CPU
             N = 1u << 6,    // Subtraction (BCD)
             Z = 1u << 7     // Zero
         };
+
+        int cycles;
 
         bool halted;
         bool stopped;
@@ -90,9 +123,6 @@ class CPU
         inline void setBC(uint16_t value) { BC = value; }
         inline void setDE(uint16_t value) { DE = value; }
         inline void setHL(uint16_t value) { HL = value; }
-
-        inline void setSP(uint16_t value) { SP = value; }
-        inline void setPC(uint16_t value) { PC = value; }
 
         int decodeExecute(uint8_t opcode);
         int decodeCB(uint8_t opcode);
