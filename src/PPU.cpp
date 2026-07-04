@@ -7,10 +7,11 @@
 // strictly prohibited without the prior written consent of the author.
 #include "Bus.h"
 #include "PPU.h"
-#include "VideoOutput.h"
 
 PPU::PPU() :
     bus(nullptr),
+    frameReady(false),
+    scanLineRendered(false),
     stat(0x80),
     lcdc(0x91),
     scy(0),
@@ -39,23 +40,26 @@ void PPU::reset()
 
     framebuffer.fill(0);
 
-    mode            = PPUMode::OAM;
-    stat            = 0x80 | static_cast<uint8_t>(mode);
+    mode                = PPUMode::OAM;
+    stat                = 0x80 | static_cast<uint8_t>(mode);
 
-    lcdc            = 0x91;
+    lcdc                = 0x91;
 
-    scy             = 0;
-    scx             = 0;
-    ly              = 0;
-    lyc             = 0;
+    scy                 = 0;
+    scx                 = 0;
+    ly                  = 0;
+    lyc                 = 0;
 
-    bgp             = 0xFC;
-    obp0            = 0xFF;
-    obp1            = 0xFF;
+    bgp                 = 0xFC;
+    obp0                = 0xFF;
+    obp1                = 0xFF;
 
-    wy              = 0;
-    wx              = 0;
-    dots            = 0;
+    wy                  = 0;
+    wx                  = 0;
+    dots                = 0;
+
+    frameReady          = false;
+    scanLineRendered    = false;
 
     updateLYCCompare();
 }
@@ -66,8 +70,10 @@ void PPU::tick(int cyclesElapsed)
     {
         dots = 0;
         ly = 0;
-        mode = PPUMode::HBlank;
-        stat = (stat & 0xFC) | static_cast<uint8_t>(PPUMode::HBlank);
+        frameReady = false;
+        scanLineRendered = false;
+
+        setMode(PPUMode::HBlank);
         updateLYCCompare();
         return;
     }
@@ -78,6 +84,7 @@ void PPU::tick(int cyclesElapsed)
     {
         dots -= 456;
         ly++;
+        scanLineRendered = false;
 
         updateLYCCompare();
 
@@ -85,10 +92,13 @@ void PPU::tick(int cyclesElapsed)
         {
             setMode(PPUMode::VBlank);
             requestVBlankInterrupt();
+            frameReady = true;
         }
         else if (ly > 153)
         {
             ly = 0;
+            scanLineRendered = false;
+
             updateLYCCompare();
             setMode(PPUMode::OAM);
         }
@@ -97,16 +107,21 @@ void PPU::tick(int cyclesElapsed)
     if (ly >= 144)
     {
         setMode(PPUMode::VBlank);
+        return;
     }
-    else
+
+    if (dots >= 252 && !scanLineRendered)
     {
-        if (dots < 80)
-            setMode(PPUMode::OAM);
-        else if (dots < 252)
-            setMode(PPUMode::Drawing);
-        else
-            setMode(PPUMode::HBlank);
+        renderScanline(ly);
+        scanLineRendered = true;
     }
+
+    if (dots < 80)
+        setMode(PPUMode::OAM);
+    else if (dots < 252)
+        setMode(PPUMode::Drawing);
+    else
+        setMode(PPUMode::HBlank);
 }
 
 uint8_t PPU::readRegister(uint16_t address) const
@@ -167,6 +182,7 @@ void PPU::writeRegister(uint16_t address, uint8_t value)
             {
                 dots = 0;
                 ly = 0;
+                scanLineRendered = false;
                 mode = PPUMode::HBlank;
                 stat = (stat & 0xFC) | static_cast<uint8_t>(PPUMode::HBlank);
                 updateLYCCompare();
@@ -238,21 +254,6 @@ void PPU::writeRegister(uint16_t address, uint8_t value)
         default:
             return;
     }
-}
-
-void PPU::renderFrame(VideoOutput& videoOutput)
-{
-    if (!isLCDEnabled())
-    {
-        framebuffer.fill(0xFFFFFFFF);
-        videoOutput.renderFrame(framebuffer);
-        return;
-    }
-
-    for (uint8_t line = 0; line < 144; line++)
-        renderScanline(line);
-
-    videoOutput.renderFrame(framebuffer);
 }
 
 void PPU::setMode(PPUMode newMode)

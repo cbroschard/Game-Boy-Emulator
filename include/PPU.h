@@ -10,10 +10,9 @@
 
 #include <array>
 #include <cstdint>
+#include "VideoOutput.h"
 
 class Bus;
-
-class VideoOutput;
 
 class PPU
 {
@@ -38,7 +37,10 @@ class PPU
         uint8_t readRegister(uint16_t address) const;
         void writeRegister(uint16_t address, uint8_t value);
 
-        void renderFrame(VideoOutput& videoOutput);
+        inline bool isFrameReady() const { return frameReady; }
+        inline void clearFrameReady() { frameReady = false; }
+
+        inline void presentFrame(VideoOutput& videoOutput) { videoOutput.renderFrame(framebuffer); }
 
     protected:
 
@@ -69,10 +71,11 @@ class PPU
 
         PPUMode mode;
 
+        bool frameReady;
+        bool scanLineRendered;
+
         uint8_t stat;
-
         uint8_t lcdc;
-
         uint8_t scy;
         uint8_t scx;
         uint8_t ly;
