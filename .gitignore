@@ -49,3 +49,7 @@ roms/
 !include/Debug/**
 !src/Debug/
 !src/Debug/**
+
+# Ignore external libraries
+include/imgui
+src/imgui
