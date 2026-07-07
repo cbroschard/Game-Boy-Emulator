@@ -44,12 +44,16 @@ roms/
 !License.txt
 !licenses/**
 
+
+# External libraries
+include/imgui
+src/imgui
+
+# State files
+*.sav
+
 # Keep Include/Src Debug folder
 !include/Debug/
 !include/Debug/**
 !src/Debug/
 !src/Debug/**
-
-# Ignore external libraries
-include/imgui
-src/imgui
