@@ -8,7 +8,27 @@
 #include <stdexcept>
 #include "EmulationSession.h"
 
-EmulationSession::EmulationSession()
+EmulationSession::EmulationSession() :
+    uiPaused(false),
+    running(true),
+    pendingSaveState(false),
+    pendingLoadState(false),
+    uiBridge
+    (
+        ui,
+        uiPaused,
+        running,
+        [this](const std::string& path)
+        {
+            pendingSaveState = true;
+            pendingSavePath = path;
+        },
+        [this](const std::string& path)
+        {
+            pendingLoadState = true;
+            pendingLoadPath = path;
+        }
+    )
 {
     wireUp();
     validateWiring();
@@ -51,7 +71,6 @@ void EmulationSession::run()
         throw std::runtime_error("Failed to start audio output.");
 
     constexpr int CPU_CLOCK_HZ = 4194304;
-
     constexpr int CYCLES_PER_SCANLINE = 456;
     constexpr int SCANLINES_PER_FRAME = 154;
     constexpr int CYCLES_PER_FRAME = CYCLES_PER_SCANLINE * SCANLINES_PER_FRAME;
@@ -66,71 +85,91 @@ void EmulationSession::run()
 
     uint64_t nextFrameTime = SDL_GetPerformanceCounter();
 
-    bool running = true;
+    running = true;
+    uiPaused = false;
 
     while (running)
     {
-        int frameCycles = 0;
+        SDL_Event event;
 
-        while (frameCycles < CYCLES_PER_FRAME && running)
+        while (SDL_PollEvent(&event))
         {
-            SDL_Event event;
+            ImGui_ImplSDL3_ProcessEvent(&event);
 
-            while (SDL_PollEvent(&event))
+            if (event.type == SDL_EVENT_QUIT)
             {
-                if (event.type == SDL_EVENT_QUIT)
-                {
-                    running = false;
-                    break;
-                }
-
-                // F12 toggles the ML monitor window.
-                if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_F12)
-                {
-                    monitorController.toggleMonitor();
-                    continue;
-                }
-
-                // Let monitor receive typing, close-window events, etc.
-                if (monitorController.handleEvent(event))
-                    continue;
-
-                inputMgr.handleEvent(event);
+                running = false;
+                break;
             }
 
-            /*
-                If the monitor is open, pause the emulated machine.
-
-                We still tick/render the monitor window so it remains responsive,
-                but we do NOT step the CPU, tick the VDP, update IRQs, queue audio,
-                or advance the emulated frame.
-            */
-            if (monitorController.isOpen())
+            if (event.type == SDL_EVENT_KEY_DOWN && event.key.key == SDLK_F12)
             {
-                monitorController.tick();
-                SDL_Delay(16);
+                monitorController.toggleMonitor();
                 continue;
             }
 
-            if (!running)
-                break;
+            ImGuiIO& io = ImGui::GetIO();
 
-            const int cpuCycles = cpu.step();
+            if (io.WantCaptureKeyboard || io.WantCaptureMouse)
+                continue;
 
-            if (cpuCycles <= 0)
-                throw std::runtime_error("CPU step returned 0 or negative cycles.");
+            if (monitorController.handleEvent(event))
+                continue;
 
-            apu.tick(cpuCycles);
-            ppu.tick(cpuCycles);
-            timer.tick(cpuCycles);
-
-            frameCycles += cpuCycles;
+            inputManager.handleEvent(event);
         }
 
         if (!running)
             break;
 
-        ppu.renderFrame(videoOutput);
+        uiPaused = ui.isDialogOpen() || pendingSaveState || pendingLoadState;
+
+        const bool emulationPaused =
+            uiPaused || monitorController.isOpen();
+
+        if (monitorController.isOpen())
+        {
+            monitorController.tick();
+        }
+
+        if (!emulationPaused)
+        {
+            int frameCycles = 0;
+
+            while (!ppu.isFrameReady() &&
+                   frameCycles < CYCLES_PER_FRAME &&
+                   running)
+            {
+                const int cpuCycles = cpu.step();
+
+                if (cpuCycles <= 0)
+                    throw std::runtime_error("CPU step returned 0 or negative cycles.");
+
+                frameCycles += cpuCycles;
+
+                apu.tick(cpuCycles);
+                ppu.tick(cpuCycles);
+                timer.tick(cpuCycles);
+            }
+        }
+
+        if (!running)
+            break;
+
+        renderUIFrame();
+
+        if (ppu.isFrameReady())
+            ppu.clearFrameReady();
+
+        uiBridge.processCommands();
+
+        const bool didStateCommand =
+            processPendingStateCommands(nextFrameTime);
+
+        if (didStateCommand)
+        {
+            renderUIFrame();
+        }
 
         nextFrameTime += static_cast<uint64_t>(
             FRAME_TIME_SECONDS * double(performanceFrequency)
@@ -156,7 +195,6 @@ void EmulationSession::run()
         }
         else
         {
-            // If emulation is running late, resync so lag does not accumulate forever.
             nextFrameTime = now;
         }
     }
@@ -175,22 +213,31 @@ void EmulationSession::wireUp()
 
     cpu.attachBusInstance(&bus);
 
-    inputMgr.attachJoypadInstance(&joypad);
+    inputManager.attachJoypadInstance(&joypad);
 
-    mlMonitor.attachMLMonitorBackendInstance(&mlmonitorBackend);
+    mlMonitor.attachMLMonitorBackendInstance(&mlMonitorBackend);
 
-    mlmonitorBackend.attachAPUInstance(&apu);
-    mlmonitorBackend.attachCartridgeInstance(&cartridge);
-    mlmonitorBackend.attachCPUInstance(&cpu);
-    mlmonitorBackend.attachEmulationSessionInstance(this);
-    mlmonitorBackend.attachInputManagerInstance(&inputMgr);
-    mlmonitorBackend.attachMemoryInstance(&memory);
-    mlmonitorBackend.attachPPUInstance(&ppu);
-    mlmonitorBackend.attachTimerInstance(&timer);
+    mlMonitorBackend.attachAPUInstance(&apu);
+    mlMonitorBackend.attachCartridgeInstance(&cartridge);
+    mlMonitorBackend.attachCPUInstance(&cpu);
+    mlMonitorBackend.attachEmulationSessionInstance(this);
+    mlMonitorBackend.attachInputManagerInstance(&inputManager);
+    mlMonitorBackend.attachMemoryInstance(&memory);
+    mlMonitorBackend.attachPPUInstance(&ppu);
+    mlMonitorBackend.attachTimerInstance(&timer);
 
     monitorController.attachMLMonitorInstance(&mlMonitor);
 
     ppu.attachBusInstance(&bus);
+
+    stateManager.attachAPUInstance(&apu);
+    stateManager.attachBusInstance(&bus);
+    stateManager.attachCartridgeInstance(&cartridge);
+    stateManager.attachCPUInstance(&cpu);
+    stateManager.attachJoypadInstance(&joypad);
+    stateManager.attachMemoryInstance(&memory);
+    stateManager.attachPPUInstance(&ppu);
+    stateManager.attachTimerInstance(&timer);
 
     timer.attachBusInstance(&bus);
 }
@@ -224,9 +271,61 @@ void EmulationSession::validateWiring() const
     if (!apu.hasAudioOutput())
         throw std::runtime_error("APU audio output is not attached.");
 
-    if (!inputMgr.hasJoypad())
+    if (!inputManager.hasJoypad())
         throw std::runtime_error("InputManager joypad is not attached.");
 
     if (!timer.hasBus())
         throw std::runtime_error("Timer bus is not attached.");
+}
+
+void EmulationSession::renderUIFrame()
+{
+    videoOutput.beginFrame();
+
+    ppu.presentFrame(videoOutput);
+    ui.draw();
+
+    videoOutput.endFrame();
+}
+
+bool EmulationSession::processPendingStateCommands(uint64_t& nextFrameTime)
+{
+    if (!pendingSaveState && !pendingLoadState)
+        return false;
+
+    uiPaused = true;
+
+    bool didWork = false;
+
+    if (pendingSaveState)
+    {
+        pendingSaveState = false;
+
+        stateManager.save(pendingSavePath);
+
+        pendingSavePath.clear();
+        didWork = true;
+    }
+
+    if (pendingLoadState)
+    {
+        pendingLoadState = false;
+
+        const bool ok = stateManager.load(pendingLoadPath);
+
+        pendingLoadPath.clear();
+
+        ppu.clearFrameReady();
+
+        if (!ok)
+            std::cout << "Load state failed\n";
+
+        didWork = true;
+    }
+
+    nextFrameTime = SDL_GetPerformanceCounter();
+
+    uiPaused = false;
+
+    return didWork;
 }
