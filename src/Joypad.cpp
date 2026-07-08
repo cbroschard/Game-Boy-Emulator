@@ -39,6 +39,55 @@ void Joypad::reset()
     down        = false;
 }
 
+void Joypad::saveState(StateWriter& wrtr) const
+{
+    wrtr.beginChunk("JOY0");
+
+    // Version
+    wrtr.writeU32(1);
+
+    wrtr.writeU8(selectBits);
+
+    wrtr.writeBool(a);
+    wrtr.writeBool(b);
+    wrtr.writeBool(select);
+    wrtr.writeBool(start);
+
+    wrtr.writeBool(left);
+    wrtr.writeBool(right);
+    wrtr.writeBool(up);
+    wrtr.writeBool(down);
+
+    wrtr.endChunk();
+}
+
+bool Joypad::loadState(const StateReader::Chunk& chunk, StateReader& rdr)
+{
+    rdr.enterChunkPayload(chunk);
+
+    if (std::memcmp(chunk.tag, "JOY0", 4) != 0)    { rdr.exitChunkPayload(chunk); return false; }
+
+    uint32_t version = 0;
+    if (!rdr.readU32(version))      { rdr.exitChunkPayload(chunk); return false; }
+    if (version != 1)               { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(selectBits))    { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readBool(a))           { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(b))           { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(select))      { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(start))       { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readBool(left))        { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(right))       { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(up))          { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(down))        { rdr.exitChunkPayload(chunk); return false; }
+
+    rdr.exitChunkPayload(chunk);
+
+    return true;
+}
+
 uint8_t Joypad::read() const
 {
     uint8_t result = 0xCF | selectBits;

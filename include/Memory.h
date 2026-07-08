@@ -11,6 +11,8 @@
 #include <array>
 #include <cstdint>
 #include <string>
+#include "StateReader.h"
+#include "StateWriter.h"
 
 class Memory
 {
@@ -19,6 +21,9 @@ class Memory
         virtual ~Memory();
 
         void reset();
+
+        void saveState(StateWriter& wrtr) const;
+        bool loadState(const StateReader::Chunk& chunk, StateReader& rdr);
 
         inline uint8_t readWRAM(uint16_t offset) const { return wram[offset]; }
         inline void writeWRAM(uint16_t offset, uint8_t value) { wram[offset] = value; }

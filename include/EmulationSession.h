@@ -8,12 +8,15 @@
 #ifndef EMULATIONSESSION_H
 #define EMULATIONSESSION_H
 
+#include <atomic>
 #include <string>
 #include "APU.h"
 #include "AudioOutput.h"
 #include "Bus.h"
 #include "Cartridge.h"
 #include "CPU.h"
+#include "EmulatorUI.h"
+#include "imgui/imgui_impl_sdl3.h"
 #include "InputManager.h"
 #include "Joypad.h"
 #include "Memory.h"
@@ -22,7 +25,9 @@
 #include "MonitorController.h"
 #include "SDL3/SDL.h"
 #include "PPU.h"
+#include "StateManager.h"
 #include "Timer.h"
+#include "UIBridge.h"
 #include "VideoOutput.h"
 
 class EmulationSession
@@ -51,15 +56,28 @@ class EmulationSession
         Bus bus;
         Cartridge cartridge;
         CPU cpu;
-        InputManager inputMgr;
+        EmulatorUI ui;
+        InputManager inputManager;
         Joypad joypad;
         Memory memory;
         MLMonitor mlMonitor;
-        MLMonitorBackend mlmonitorBackend;
+        MLMonitorBackend mlMonitorBackend;
         MonitorController monitorController;
         PPU ppu;
+        StateManager stateManager;
         Timer timer;
         VideoOutput videoOutput;
+
+        std::atomic<bool> uiPaused;
+        std::atomic<bool> running;
+
+        bool pendingSaveState;
+        bool pendingLoadState;
+
+        std::string pendingSavePath;
+        std::string pendingLoadPath;
+
+        UIBridge uiBridge;
 
         std::string biosPath;
         std::string cartridgePath;
@@ -68,6 +86,10 @@ class EmulationSession
         void validateWiring() const;
 
         inline bool loadBIOS(const std::string& path) { return memory.loadBIOS(path); }
+
+        void renderUIFrame();
+
+        bool processPendingStateCommands(uint64_t& nextFrameTime);
 };
 
 #endif // EMULATIONSESSION_H

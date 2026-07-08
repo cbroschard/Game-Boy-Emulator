@@ -9,8 +9,11 @@
 #define CPU_H
 
 #include <cstdint>
+#include "StateReader.h"
+#include "StateWriter.h"
 
 class Bus;
+
 struct lr35902CPUState
 {
     uint16_t SP = 0;
@@ -35,7 +38,7 @@ struct lr35902CPUState
     bool flagH = false;
     bool flagC = false;
 
-    uint64_t cycles = 0;
+    int cycles = 0;
 
     bool halted = false;
     bool stopped = false;
@@ -53,6 +56,9 @@ class CPU
 
         void reset();
         int step();
+
+        void saveState(StateWriter& wrtr) const;
+        bool loadState(const StateReader::Chunk& chunk, StateReader& rdr);
 
         inline bool hasBus() const { return bus ? 1 : 0; }
 
@@ -91,7 +97,7 @@ class CPU
             Z = 1u << 7     // Zero
         };
 
-        int cycles;
+        int totalCycles;
 
         bool halted;
         bool stopped;

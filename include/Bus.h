@@ -9,6 +9,8 @@
 #define BUS_H
 
 #include <cstdint>
+#include "StateReader.h"
+#include "StateWriter.h"
 
 class APU;
 class Cartridge;
@@ -47,6 +49,9 @@ class Bus
         inline bool hasTimer() const { return timer ? 1 : 0; }
 
         void reset();
+
+        void saveState(StateWriter& wrtr) const;
+        bool loadState(const StateReader::Chunk& chunk, StateReader& rdr);
 
         uint8_t read(uint16_t address);
         void write(uint16_t address, uint8_t value);

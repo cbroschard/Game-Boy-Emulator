@@ -28,12 +28,14 @@ class MLMonitor
         MLMonitor();
         virtual ~MLMonitor();
 
-        inline void attachMLMonitorBackendInstance(MLMonitorBackend* mlmonitorBackend) { this->mlmonitorBackend = mlmonitorBackend; }
+        inline void attachMLMonitorBackendInstance(MLMonitorBackend* mlMonitorBackend) { this->mlMonitorBackend = mlMonitorBackend; }
 
         std::string executeAndCapture(const std::string& cmdLine);
 
         inline void setRunningFlag(bool flag) { running = flag; }
         inline bool getRunningFlag() const { return running; }
+
+        inline MLMonitorBackend* getMLMonitorBackend() const { return mlMonitorBackend; }
 
         void enterMonitor();
         std::string getPrompt() const;
@@ -46,7 +48,7 @@ class MLMonitor
 
     private:
         // Non-owning pointers
-        MLMonitorBackend* mlmonitorBackend;
+        MLMonitorBackend* mlMonitorBackend;
 
         bool running;
 

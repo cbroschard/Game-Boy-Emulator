@@ -64,11 +64,29 @@ VideoOutput::VideoOutput() :
 
     SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    io.FontGlobalScale = 2.0f;
+    ImGui::GetStyle().ScaleAllSizes(2.0f);
+
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImGui_ImplSDL3_InitForSDLRenderer(window, renderer);
+    ImGui_ImplSDLRenderer3_Init(renderer);
+
     framebuffer.fill(0xFFE0F8D0);
 }
 
 VideoOutput::~VideoOutput()
 {
+    ImGui_ImplSDLRenderer3_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
+    ImGui::DestroyContext();
+
     if (texture)
     {
         SDL_DestroyTexture(texture);
@@ -103,6 +121,26 @@ void VideoOutput::clear()
 
 void VideoOutput::present()
 {
+    beginFrame();
+    renderGameFrame();
+    endFrame();
+}
+
+void VideoOutput::beginFrame()
+{
+    if (!window || !renderer)
+        return;
+
+    ImGui_ImplSDLRenderer3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+}
+
+void VideoOutput::renderGameFrame()
+{
     if (!window || !renderer || !texture)
         return;
 
@@ -112,9 +150,6 @@ void VideoOutput::present()
         framebuffer.data(),
         SCREEN_WIDTH * sizeof(uint32_t)
     );
-
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
 
     int windowWidth = 0;
     int windowHeight = 0;
@@ -142,6 +177,15 @@ void VideoOutput::present()
     dest.h = outputHeight;
 
     SDL_RenderTexture(renderer, texture, nullptr, &dest);
+}
+
+void VideoOutput::endFrame()
+{
+    if (!renderer)
+        return;
+
+    ImGui::Render();
+    ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
 
     SDL_RenderPresent(renderer);
 }
@@ -149,7 +193,7 @@ void VideoOutput::present()
 void VideoOutput::renderFrame(const std::array<uint32_t, SCREEN_WIDTH * SCREEN_HEIGHT>& pixels)
 {
     framebuffer = pixels;
-    present();
+    renderGameFrame();
 }
 
 void VideoOutput::setPixel(int x, int y, uint8_t colorIndex)

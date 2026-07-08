@@ -124,6 +124,99 @@ void PPU::tick(int cyclesElapsed)
         setMode(PPUMode::HBlank);
 }
 
+void PPU::saveState(StateWriter& wrtr) const
+{
+    wrtr.beginChunk("PPU0");
+
+    // Version
+    wrtr.writeU32(1);
+
+    wrtr.writeArrayU8(vram.data(), vram.size());
+    wrtr.writeArrayU8(oam.data(), oam.size());
+
+    wrtr.writeArrayU32(framebuffer.data(), framebuffer.size());
+
+    wrtr.writeU8(static_cast<uint8_t>(mode));
+
+    wrtr.writeBool(frameReady);
+    wrtr.writeBool(scanLineRendered);
+
+    wrtr.writeU8(stat);
+    wrtr.writeU8(lcdc);
+
+    wrtr.writeU8(scy);
+    wrtr.writeU8(scx);
+    wrtr.writeU8(ly);
+    wrtr.writeU8(lyc);
+
+    wrtr.writeU8(bgp);
+    wrtr.writeU8(obp0);
+    wrtr.writeU8(obp1);
+
+    wrtr.writeU8(wy);
+    wrtr.writeU8(wx);
+
+    wrtr.writeU16(dots);
+
+    wrtr.endChunk();
+}
+
+bool PPU::loadState(const StateReader::Chunk& chunk, StateReader& rdr)
+{
+    rdr.enterChunkPayload(chunk);
+
+    if (std::memcmp(chunk.tag, "PPU0", 4 ) != 0)                    { rdr.exitChunkPayload(chunk); return false; }
+
+    uint32_t version = 0;
+    if (!rdr.readU32(version))                                      { rdr.exitChunkPayload(chunk); return false; }
+    if (version != 1)                                               { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readArrayU8(vram.data(), vram.size()))                 { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readArrayU8(oam.data(), oam.size()))                   { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readArrayU32(framebuffer.data(), framebuffer.size()))  { rdr.exitChunkPayload(chunk); return false; }
+
+    uint8_t tempMode = 0;
+    if (!rdr.readU8(tempMode))                                      { rdr.exitChunkPayload(chunk); return false; }
+
+    mode = static_cast<PPUMode>(tempMode);
+
+    if (!rdr.readBool(frameReady))                                  { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(scanLineRendered))                            { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(stat))                                         { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(lcdc))                                          { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(scy))                                           { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(scx))                                           { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(ly))                                            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(lyc))                                           { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(bgp))                                           { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(obp0))                                          { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(obp1))                                          { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(wy))                                            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(wx))                                            { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU16(dots))                                         { rdr.exitChunkPayload(chunk); return false; }
+
+    stat |= 0x80;
+    stat = (stat & 0xFC) | static_cast<uint8_t>(mode);
+
+    if (ly == lyc)
+        stat |= 0x04;
+    else
+        stat &= static_cast<uint8_t>(~0x04);
+
+    frameReady = false;
+    scanLineRendered = false;
+
+    rdr.exitChunkPayload(chunk);
+
+    return true;
+}
+
 uint8_t PPU::readRegister(uint16_t address) const
 {
     switch (address)

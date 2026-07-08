@@ -10,6 +10,8 @@
 
 #include <array>
 #include <cstdint>
+#include "StateReader.h"
+#include "StateWriter.h"
 #include "VideoOutput.h"
 
 class Bus;
@@ -25,6 +27,9 @@ class PPU
         void reset();
 
         void tick(int cyclesElapsed);
+
+        void saveState(StateWriter& wrtr) const;
+        bool loadState(const StateReader::Chunk& chunk, StateReader& rdr);
 
         inline bool hasBus() const { return bus ? 1 : 0; }
 
@@ -88,7 +93,6 @@ class PPU
 
         uint8_t wy;
         uint8_t wx;
-
 
         uint16_t dots;
 

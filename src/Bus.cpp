@@ -35,6 +35,37 @@ void Bus::reset()
     interruptStatus = 0xE1; // $FF0F IF
 }
 
+void Bus::saveState(StateWriter& wrtr) const
+{
+    wrtr.beginChunk("BUS0");
+
+    // Version
+    wrtr.writeU32(1);
+
+    wrtr.writeU8(interruptStatus);
+
+    wrtr.endChunk();
+}
+
+bool Bus::loadState(const StateReader::Chunk& chunk, StateReader& rdr)
+{
+    rdr.enterChunkPayload(chunk);
+
+    if (std::memcmp(chunk.tag, "BUS0", 4) != 0)     { rdr.exitChunkPayload(chunk); return false; }
+
+    uint32_t version = 0;
+    if (!rdr.readU32(version))                      { rdr.exitChunkPayload(chunk); return false; }
+    if (version != 1)                               { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(interruptStatus))               { rdr.exitChunkPayload(chunk); return false; }
+
+    interruptStatus |= 0xE0;
+
+    rdr.exitChunkPayload(chunk);
+
+    return true;
+}
+
 uint8_t Bus::read(uint16_t address)
 {
     if (!memory)

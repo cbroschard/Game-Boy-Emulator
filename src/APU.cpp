@@ -127,6 +127,182 @@ void APU::tick(int cyclesElapsed)
     }
 }
 
+void APU::saveState(StateWriter& wrtr) const
+{
+    wrtr.beginChunk("APU0");
+
+    // Version
+    wrtr.writeU32(1);
+
+    wrtr.writeBool(apuEnabled);
+
+    wrtr.writeI32(frameSequencerCounter);
+    wrtr.writeU8(frameSequencerStep);
+    wrtr.writeI32(sampleCounter);
+
+    // Dump registers
+    wrtr.writeU8(registers.nr10);
+    wrtr.writeU8(registers.nr11);
+    wrtr.writeU8(registers.nr12);
+    wrtr.writeU8(registers.nr13);
+    wrtr.writeU8(registers.nr14);
+
+    wrtr.writeU8(registers.nr21);
+    wrtr.writeU8(registers.nr22);
+    wrtr.writeU8(registers.nr23);
+    wrtr.writeU8(registers.nr24);
+
+    wrtr.writeU8(registers.nr30);
+    wrtr.writeU8(registers.nr31);
+    wrtr.writeU8(registers.nr32);
+    wrtr.writeU8(registers.nr33);
+    wrtr.writeU8(registers.nr34);
+
+    wrtr.writeU8(registers.nr41);
+    wrtr.writeU8(registers.nr42);
+    wrtr.writeU8(registers.nr43);
+    wrtr.writeU8(registers.nr44);
+
+    wrtr.writeU8(registers.nr50);
+    wrtr.writeU8(registers.nr51);
+    wrtr.writeU8(registers.nr52);
+
+    for (int i = 0; i < 16; i++)
+        wrtr.writeU8(registers.waveRAM[i]);
+
+    // Channel 1
+    wrtr.writeBool(channel1.enabled);
+    wrtr.writeBool(channel1.dacEnabled);
+    wrtr.writeBool(channel1.lengthEnabled);
+    wrtr.writeU16(channel1.lengthCounter);
+    wrtr.writeU16(channel1.periodDivider);
+    wrtr.writeU8(channel1.duty);
+    wrtr.writeU8(channel1.dutyPosition);
+    wrtr.writeU8(channel1.currentVolume);
+    wrtr.writeU8(channel1.envelopeTimer);
+
+    // Channel 2
+    wrtr.writeBool(channel2.enabled);
+    wrtr.writeBool(channel2.dacEnabled);
+    wrtr.writeBool(channel2.lengthEnabled);
+    wrtr.writeU16(channel2.lengthCounter);
+    wrtr.writeU16(channel2.periodDivider);
+    wrtr.writeU8(channel2.duty);
+    wrtr.writeU8(channel2.dutyPosition);
+    wrtr.writeU8(channel2.currentVolume);
+    wrtr.writeU8(channel2.envelopeTimer);
+
+    // Channel 3
+    wrtr.writeBool(channel3.enabled);
+    wrtr.writeBool(channel3.dacEnabled);
+    wrtr.writeBool(channel3.lengthEnabled);
+    wrtr.writeU16(channel3.lengthCounter);
+    wrtr.writeU16(channel3.periodDivider);
+    wrtr.writeU8(channel3.wavePosition);
+    wrtr.writeU8(channel3.outputLevel);
+
+    // Channel 4
+    wrtr.writeBool(channel4.enabled);
+    wrtr.writeBool(channel4.dacEnabled);
+    wrtr.writeBool(channel4.lengthEnabled);
+    wrtr.writeU16(channel4.lengthCounter);
+    wrtr.writeU16(channel4.periodDivider);
+    wrtr.writeU8(channel4.currentVolume);
+    wrtr.writeU16(channel4.lfsr);
+    wrtr.writeU8(channel4.envelopeTimer);
+    wrtr.writeBool(channel4.widthMode);
+
+    wrtr.endChunk();
+}
+
+bool APU::loadState(const StateReader::Chunk& chunk, StateReader& rdr)
+{
+    rdr.enterChunkPayload(chunk);
+
+    if (std::memcmp(chunk.tag, "APU0", 4) != 0) { rdr.exitChunkPayload(chunk); return false; }
+
+    uint32_t version = 0;
+    if (!rdr.readU32(version))                  { rdr.exitChunkPayload(chunk); return false; }
+    if (version != 1)                           { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readBool(apuEnabled))              { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readI32(frameSequencerCounter))    { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(frameSequencerStep))        { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readI32(sampleCounter))            { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(registers.nr10))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr11))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr12))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr13))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr14))            { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(registers.nr21))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr22))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr23))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr24))            { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(registers.nr30))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr31))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr32))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr33))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr34))            { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(registers.nr41))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr42))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr43))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr44))            { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(registers.nr50))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr51))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(registers.nr52))            { rdr.exitChunkPayload(chunk); return false; }
+
+    for (int i = 0; i < 16; i++)
+        if (!rdr.readU8(registers.waveRAM[i]))  { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readBool(channel1.enabled))        { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(channel1.dacEnabled))     { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(channel1.lengthEnabled))  { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(channel1.lengthCounter))   { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(channel1.periodDivider))   { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel1.duty))             { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel1.dutyPosition))     { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel1.currentVolume))    { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel1.envelopeTimer))    { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readBool(channel2.enabled))        { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(channel2.dacEnabled))     { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(channel2.lengthEnabled))  { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(channel2.lengthCounter))   { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(channel2.periodDivider))   { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel2.duty))             { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel2.dutyPosition))     { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel2.currentVolume))    { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel2.envelopeTimer))    { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readBool(channel3.enabled))        { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(channel3.dacEnabled))     { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(channel3.lengthEnabled))  { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(channel3.lengthCounter))   { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(channel3.periodDivider))   { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel3.wavePosition))     { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel3.outputLevel))      { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readBool(channel4.enabled))        { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(channel4.dacEnabled))     { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(channel4.lengthEnabled))  { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(channel4.lengthCounter))   { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(channel4.periodDivider))   { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel4.currentVolume))    { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(channel4.lfsr))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(channel4.envelopeTimer))    { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(channel4.widthMode))      { rdr.exitChunkPayload(chunk); return false; }
+
+    rdr.exitChunkPayload(chunk);
+
+    return true;
+}
+
 uint8_t APU::readRegister(uint16_t address) const
 {
     switch (address)

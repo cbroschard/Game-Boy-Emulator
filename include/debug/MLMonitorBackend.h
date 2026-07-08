@@ -31,19 +31,24 @@ class MLMonitorBackend
         inline void attachCartridgeInstance(Cartridge* cartridge) { this->cartridge = cartridge; }
         inline void attachCPUInstance(CPU* cpu) { this->cpu = cpu; }
         inline void attachEmulationSessionInstance(EmulationSession* host) { this->host = host; }
-        inline void attachInputManagerInstance(InputManager* inputMgr) { this->inputMgr = inputMgr; }
+        inline void attachInputManagerInstance(InputManager* inputManager) { this->inputManager = inputManager; }
         inline void attachMemoryInstance(Memory* memory) { this->memory = memory; }
         inline void attachPPUInstance(PPU* ppu) { this->ppu = ppu; }
         inline void attachTimerInstance(Timer* timer) { this->timer = timer; }
 
+        void enterMonitor();
+
+        // CPU
         inline CPU& getCPU() { return *cpu; }
         inline const CPU& getCPU() const { return *cpu; }
-
         inline uint16_t getPC() const { return cpu->getPC(); }
-
         inline void setPC(uint16_t address) { cpu->setPC(address); }
 
-        void enterMonitor();
+        void printCPUCycles() const;
+        void printCPUFlags() const;
+        void printCPUIRQState() const;
+        void printCPUStack(int count) const;
+        void printCPUState() const;
 
     protected:
 
@@ -54,7 +59,7 @@ class MLMonitorBackend
         Cartridge* cartridge;
         CPU* cpu;
         EmulationSession* host;
-        InputManager* inputMgr;
+        InputManager* inputManager;
         Memory* memory;
         PPU* ppu;
         Timer* timer;

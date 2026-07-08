@@ -39,6 +39,68 @@ void Cartridge::reset()
     bankingMode     = 0;
 }
 
+void Cartridge::saveState(StateWriter& wrtr) const
+{
+    wrtr.beginChunk("CART");
+
+    // Version
+    wrtr.writeU32(1);
+
+    wrtr.writeU8(static_cast<uint8_t>(cartridgeType));
+    wrtr.writeU8(static_cast<uint8_t>(mapperType));
+
+    wrtr.writeBool(hasRAM);
+    wrtr.writeBool(ramEnabled);
+    wrtr.writeBool(hasBattery);
+    wrtr.writeBool(hasTimer);
+    wrtr.writeBool(hasRumble);
+
+    wrtr.writeU16(selectedROMBank);
+    wrtr.writeU8(selectedRAMBank);
+    wrtr.writeU8(bankingMode);
+
+    wrtr.writeVectorU8(cartridgeROM);
+    wrtr.writeVectorU8(cartridgeRAM);
+
+    wrtr.endChunk();
+}
+
+bool Cartridge::loadState(const StateReader::Chunk& chunk, StateReader& rdr)
+{
+    rdr.enterChunkPayload(chunk);
+
+    if (std::memcmp(chunk.tag, "CART", 4) != 0)     { rdr.exitChunkPayload(chunk); return false; }
+
+    uint32_t version = 0;
+    if (!rdr.readU32(version))                      { rdr.exitChunkPayload(chunk); return false; }
+    if (version != 1)                               { rdr.exitChunkPayload(chunk); return false; }
+
+    uint8_t cartType = 0;
+    if (!rdr.readU8(cartType))                      { rdr.exitChunkPayload(chunk); return false; }
+    cartridgeType = static_cast<CartridgeType>(cartType);
+
+    uint8_t mapType = 0;
+    if (!rdr.readU8(mapType))                       { rdr.exitChunkPayload(chunk); return false; }
+    mapperType = static_cast<MapperType>(mapType);
+
+    if (!rdr.readBool(hasRAM))                      { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(ramEnabled))                  { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(hasBattery))                  { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(hasTimer))                    { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(hasRumble))                   { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU16(selectedROMBank))              { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(selectedRAMBank))               { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(bankingMode))                   { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readVectorU8(cartridgeROM))            { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readVectorU8(cartridgeRAM))            { rdr.exitChunkPayload(chunk); return false; }
+
+    rdr.exitChunkPayload(chunk);
+
+    return true;
+}
+
 bool Cartridge::loadCartridge(const std::string& path)
 {
     // Reset state
@@ -198,6 +260,28 @@ void Cartridge::writeROM(uint16_t address, uint8_t value)
             break;
         }
 
+        case MapperType::MBC5:
+        {
+            if (address <= 0x1FFF)
+            {
+                ramEnabled = ((value & 0x0F) == 0x0A);
+            }
+            else if (address <= 0x2FFF)
+            {
+                selectedROMBank = (selectedROMBank & 0x100) | value;
+            }
+            else if (address <= 0x3FFF)
+            {
+                selectedROMBank = (selectedROMBank & 0x0FF) | ((value & 0x01) << 8);
+            }
+            else if (address <= 0x5FFF)
+            {
+                selectedRAMBank = value & 0x0F;
+            }
+
+            break;
+        }
+
         default:
             break;
     }
@@ -208,10 +292,13 @@ uint8_t Cartridge::readRAM(uint16_t offset)
     if (!isRAMAccessible())
         return 0xFF;
 
-    if (offset >= cartridgeRAM.size())
+    const size_t effectiveRAMOffset =
+        size_t(selectedRAMBank) * 0x2000 + offset;
+
+    if (effectiveRAMOffset >= cartridgeRAM.size())
         return 0xFF;
 
-    return cartridgeRAM[offset];
+    return cartridgeRAM[effectiveRAMOffset];
 }
 
 void Cartridge::writeRAM(uint16_t offset, uint8_t value)
@@ -219,10 +306,13 @@ void Cartridge::writeRAM(uint16_t offset, uint8_t value)
     if (!isRAMAccessible())
         return;
 
-    if (offset >= cartridgeRAM.size())
+    const size_t effectiveRAMOffset =
+        size_t(selectedRAMBank) * 0x2000 + offset;
+
+    if (effectiveRAMOffset >= cartridgeRAM.size())
         return;
 
-    cartridgeRAM[offset] = value;
+    cartridgeRAM[effectiveRAMOffset] = value;
 }
 
 bool Cartridge::loadFile(const std::string& path, std::vector<uint8_t>& buffer)

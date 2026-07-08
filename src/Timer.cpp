@@ -71,6 +71,46 @@ void Timer::tick(int cycles)
     }
 }
 
+void Timer::saveState(StateWriter& wrtr) const
+{
+    wrtr.beginChunk("TMR0");
+
+    // Version
+    wrtr.writeU32(1);
+
+    wrtr.writeU8(div);
+    wrtr.writeU8(timA);
+    wrtr.writeU8(tma);
+    wrtr.writeU8(tac);
+
+    wrtr.writeU16(divCounter);
+    wrtr.writeU16(timACounter);
+
+    wrtr.endChunk();
+}
+
+bool Timer::loadState(const StateReader::Chunk& chunk, StateReader& rdr)
+{
+    rdr.enterChunkPayload(chunk);
+
+    if (std::memcmp(chunk.tag, "TMR0", 4) != 0)     { rdr.exitChunkPayload(chunk); return false; }
+
+    uint32_t version = 0;
+    if (!rdr.readU32(version))                      { rdr.exitChunkPayload(chunk); return false; }
+    if (version != 1)                               { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU8(div))                           { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(timA))                          { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(tma))                           { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(tac))                           { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU16(divCounter))                   { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(timACounter))                  { rdr.exitChunkPayload(chunk); return false; }
+
+    rdr.exitChunkPayload(chunk);
+    return true;
+}
+
 uint8_t Timer::readRegister(uint16_t address) const
 {
     switch (address)

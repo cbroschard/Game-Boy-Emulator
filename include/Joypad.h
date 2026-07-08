@@ -9,6 +9,8 @@
 #define JOYPAD_H
 
 #include <cstdint>
+#include "StateReader.h"
+#include "StateWriter.h"
 
 class Joypad
 {
@@ -17,6 +19,9 @@ class Joypad
         virtual ~Joypad();
 
         void reset();
+
+        void saveState(StateWriter& wrtr) const;
+        bool loadState(const StateReader::Chunk& chunk, StateReader& rdr);
 
         uint8_t read() const;
         void write(uint8_t value);

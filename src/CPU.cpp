@@ -11,7 +11,7 @@
 
 CPU::CPU() :
     bus(nullptr),
-    cycles(0),
+    totalCycles(0),
     halted(false),
     stopped(false),
     IME(false),
@@ -32,7 +32,7 @@ void CPU::reset()
     SP                  = 0x0000;
     PC                  = 0x0000;
 
-    cycles              = 0;
+    totalCycles         = 0;
 
     halted              = false;
     stopped             = false;
@@ -52,14 +52,22 @@ int CPU::step()
     int interruptCycles = serviceInterrupts();
 
     if (interruptCycles > 0)
+    {
+        totalCycles += interruptCycles;
         return interruptCycles;
+    }
 
     if (halted)
+    {
+        totalCycles += 4;
         return 4;
+    }
 
     uint8_t opcode = fetch8();
 
-    cycles = decodeExecute(opcode);
+    int cycles = decodeExecute(opcode);
+
+    totalCycles += cycles;
 
     if (imeEnablePending)
     {
@@ -68,6 +76,63 @@ int CPU::step()
     }
 
     return cycles;
+}
+
+void CPU::saveState(StateWriter& wrtr) const
+{
+    wrtr.beginChunk("CPU0");
+
+    // Version
+    wrtr.writeU32(1);
+
+    wrtr.writeU16(AF);
+    wrtr.writeU16(BC);
+    wrtr.writeU16(DE);
+    wrtr.writeU16(HL);
+    wrtr.writeU16(SP);
+    wrtr.writeU16(PC);
+
+    wrtr.writeBool(halted);
+    wrtr.writeBool(stopped);
+
+    wrtr.writeBool(IME);
+    wrtr.writeBool(imeEnablePending);
+
+    wrtr.writeI32(totalCycles);
+
+    wrtr.endChunk();
+}
+
+bool CPU::loadState(const StateReader::Chunk& chunk, StateReader& rdr)
+{
+    rdr.enterChunkPayload(chunk);
+
+    if (std::memcmp(chunk.tag, "CPU0", 4) != 0 )        { rdr.exitChunkPayload(chunk); return false; }
+
+    uint32_t version = 0;
+    if (!rdr.readU32(version))                          { rdr.exitChunkPayload(chunk); return false; }
+    if (version != 1)                                   { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readU16(AF))                               { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(BC))                               { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(DE))                               { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(HL))                               { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(SP))                               { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU16(PC))                               { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readBool(halted))                          { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(stopped))                         { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readBool(IME))                             { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readBool(imeEnablePending))                { rdr.exitChunkPayload(chunk); return false; }
+
+    if (!rdr.readI32(totalCycles))                      { rdr.exitChunkPayload(chunk); return false; }
+
+    AF &= 0xFFF0;
+
+    rdr.exitChunkPayload(chunk);
+
+    return true;
 }
 
 lr35902CPUState CPU::getCPUState() const
@@ -96,7 +161,7 @@ lr35902CPUState CPU::getCPUState() const
     state.flagH = getFlag(Flags::H);
     state.flagC = getFlag(Flags::C);
 
-    state.cycles = cycles;
+    state.cycles = totalCycles;
 
     state.halted = halted;
     state.stopped = stopped;

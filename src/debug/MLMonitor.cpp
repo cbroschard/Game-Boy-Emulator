@@ -6,13 +6,14 @@
 // of this code in whole or in part for any other purpose is
 // strictly prohibited without the prior written consent of the author.
 #include "Debug/MLMonitor.h"
+#include "Debug/CPUCommand.h"
 
 MLMonitor::MLMonitor() :
-    mlmonitorBackend(nullptr),
+    mlMonitorBackend(nullptr),
     running(false),
     outputFileEnabled(false)
 {
-
+    registerCommand(std::make_unique<CPUCommand>());
 }
 
 MLMonitor::~MLMonitor()
@@ -23,7 +24,7 @@ MLMonitor::~MLMonitor()
 
 void MLMonitor::enterMonitor()
 {
-    if (mlmonitorBackend) mlmonitorBackend->enterMonitor();
+    if (mlMonitorBackend) mlMonitorBackend->enterMonitor();
 }
 
 std::string MLMonitor::getPrompt() const

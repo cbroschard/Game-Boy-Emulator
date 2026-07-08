@@ -12,6 +12,8 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "StateReader.h"
+#include "StateWriter.h"
 
 class Cartridge
 {
@@ -20,6 +22,9 @@ class Cartridge
         virtual ~Cartridge();
 
         void reset();
+
+        void saveState(StateWriter& wrtr) const;
+        bool loadState(const StateReader::Chunk& chunk, StateReader& rdr);
 
         bool loadCartridge(const std::string& path);
 
@@ -128,7 +133,7 @@ class Cartridge
         bool hasTimer;
         bool hasRumble;
 
-        uint8_t selectedROMBank;
+        uint16_t selectedROMBank;
         uint8_t selectedRAMBank;
         uint8_t bankingMode;
 

@@ -10,6 +10,9 @@
 
 #include <array>
 #include <cstdint>
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_sdl3.h"
+#include "imgui/imgui_impl_sdlrenderer3.h"
 #include "SDL3/SDL.h"
 
 class VideoOutput
@@ -24,6 +27,13 @@ class VideoOutput
 
         void clear();
         void present();
+
+        void beginFrame();
+        void renderGameFrame();
+        void endFrame();
+
+        SDL_Window* getWindow() const { return window; }
+        SDL_Renderer* getRenderer() const { return renderer; }
 
         void renderFrame(const std::array<uint32_t, SCREEN_WIDTH * SCREEN_HEIGHT>& pixels);
 
