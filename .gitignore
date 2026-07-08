@@ -52,6 +52,9 @@ src/imgui
 # State files
 *.sav
 
+# ini files
+*.ini
+
 # Keep Include/Src Debug folder
 !include/Debug/
 !include/Debug/**
