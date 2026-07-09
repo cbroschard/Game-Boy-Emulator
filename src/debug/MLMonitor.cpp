@@ -7,7 +7,9 @@
 // strictly prohibited without the prior written consent of the author.
 #include "debug/MLMonitor.h"
 #include "debug/CPUCommand.h"
+#include "debug/GoCommand.h"
 #include "debug/MemoryDumpCommand.h"
+#include "debug/MemoryEditCommand.h"
 
 MLMonitor::MLMonitor() :
     mlMonitorBackend(nullptr),
@@ -15,7 +17,9 @@ MLMonitor::MLMonitor() :
     outputFileEnabled(false)
 {
     registerCommand(std::make_unique<CPUCommand>());
+    registerCommand(std::make_unique<GoCommand>());
     registerCommand(std::make_unique<MemoryDumpCommand>());
+    registerCommand(std::make_unique<MemoryEditCommand>());
 }
 
 MLMonitor::~MLMonitor()

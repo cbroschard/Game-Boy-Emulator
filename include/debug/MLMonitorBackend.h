@@ -40,6 +40,7 @@ class MLMonitorBackend
 
         // Bus
         inline uint8_t readRAM(uint16_t address) const { return bus->read(address); }
+        inline void writeRAM(uint16_t address, uint8_t value) { bus->write(address, value); }
 
         // CPU
         inline CPU& getCPU() { return *cpu; }
