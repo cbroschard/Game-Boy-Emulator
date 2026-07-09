@@ -218,6 +218,7 @@ void EmulationSession::wireUp()
     mlMonitor.attachMLMonitorBackendInstance(&mlMonitorBackend);
 
     mlMonitorBackend.attachAPUInstance(&apu);
+    mlMonitorBackend.attachBusInstance(&bus);
     mlMonitorBackend.attachCartridgeInstance(&cartridge);
     mlMonitorBackend.attachCPUInstance(&cpu);
     mlMonitorBackend.attachEmulationSessionInstance(this);
