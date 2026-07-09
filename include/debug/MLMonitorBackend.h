@@ -9,10 +9,10 @@
 #define MLMONITORBACKEND_H
 
 #include <cstdint>
+#include "Bus.h"
 #include "CPU.h"
 
 class APU;
-class Bus;
 class Cartridge;
 class EmulationSession;
 class InputManager;
@@ -37,6 +37,9 @@ class MLMonitorBackend
         inline void attachTimerInstance(Timer* timer) { this->timer = timer; }
 
         void enterMonitor();
+
+        // Bus
+        inline uint8_t readRAM(uint16_t address) const { return bus->read(address); }
 
         // CPU
         inline CPU& getCPU() { return *cpu; }
