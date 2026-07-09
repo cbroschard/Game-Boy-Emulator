@@ -176,12 +176,20 @@ bool StateReader::readArrayU8(uint8_t* data, size_t size)
     return readBytes(data, size);
 }
 
-bool StateReader::readArrayU32(uint32_t* data, size_t size)
+bool StateReader::readArrayU32(uint32_t* data, size_t expectedSize)
 {
-    if (!data && size != 0)
+    if (!data && expectedSize != 0)
         return false;
 
-    for (size_t i = 0; i < size; ++i)
+    uint32_t storedSize = 0;
+
+    if (!readU32(storedSize))
+        return false;
+
+    if (storedSize != expectedSize)
+        return false;
+
+    for (size_t i = 0; i < expectedSize; ++i)
     {
         if (!readU32(data[i]))
             return false;
