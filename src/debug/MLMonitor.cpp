@@ -5,8 +5,9 @@
 // non-commercial use only. Redistribution, modification, or use
 // of this code in whole or in part for any other purpose is
 // strictly prohibited without the prior written consent of the author.
-#include "Debug/MLMonitor.h"
-#include "Debug/CPUCommand.h"
+#include "debug/MLMonitor.h"
+#include "debug/CPUCommand.h"
+#include "debug/MemoryDumpCommand.h"
 
 MLMonitor::MLMonitor() :
     mlMonitorBackend(nullptr),
@@ -14,6 +15,7 @@ MLMonitor::MLMonitor() :
     outputFileEnabled(false)
 {
     registerCommand(std::make_unique<CPUCommand>());
+    registerCommand(std::make_unique<MemoryDumpCommand>());
 }
 
 MLMonitor::~MLMonitor()
