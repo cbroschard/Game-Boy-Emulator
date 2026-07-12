@@ -1,0 +1,173 @@
+// Copyright (c) 2026 Christopher Broschard
+// All rights reserved.
+//
+// This source code is provided for personal, educational, and
+// non-commercial use only. Redistribution, modification, or use
+// of this code in whole or in part for any other purpose is
+// strictly prohibited without the prior written consent of the author.
+#include "Common/CommandUtils.h"
+
+uint16_t parseAddress(const std::string& arg)
+{
+    if (arg.empty())
+    {
+        throw std::runtime_error("Invalid address format: empty");
+    }
+
+    std::string s = sanitizeAddrToken(arg);
+
+    if (s.empty())
+    {
+        throw std::runtime_error("Invalid address format: empty");
+    }
+
+    unsigned long value = 0;
+
+    if (s[0] == '$')
+    {
+        value = std::stoul(s.substr(1), nullptr, 16);
+    }
+    else if (s.rfind("0x", 0) == 0 || s.rfind("0X", 0) == 0)
+    {
+        value = std::stoul(s.substr(2), nullptr, 16);
+    }
+    else
+    {
+        // ML monitor convention:
+        // bare addresses are hexadecimal, so "8008" means $8008.
+        value = std::stoul(s, nullptr, 16);
+    }
+
+    if (value > 0xFFFFul)
+    {
+        throw std::runtime_error("Address out of range");
+    }
+
+    return static_cast<uint16_t>(value);
+}
+
+uint32_t parseAddress32(const std::string& arg)
+{
+    if (arg.empty())
+        throw std::runtime_error("Invalid address format: empty");
+
+    std::string s = sanitizeAddrToken(arg);
+
+    if (s.empty())
+        throw std::runtime_error("Invalid address format: empty");
+
+    unsigned long value = 0;
+
+    if (s[0] == '$')
+        value = std::stoul(s.substr(1), nullptr, 16);
+    else if (s.rfind("0x", 0) == 0 || s.rfind("0X", 0) == 0)
+        value = std::stoul(s.substr(2), nullptr, 16);
+    else
+        value = std::stoul(s, nullptr, 16);
+
+    if (value > 0xFFFFFFul)
+        throw std::runtime_error("REU address out of range");
+
+    return static_cast<uint32_t>(value);
+}
+
+std::string hex2(uint8_t value)
+{
+    std::ostringstream s;
+    s << std::uppercase
+      << std::hex
+      << std::setw(2)
+      << std::setfill('0')
+      << static_cast<unsigned>(value);
+    return s.str();
+}
+
+std::string hex4(uint8_t high, uint8_t low)
+{
+    std::ostringstream s;
+    s << std::uppercase << std::hex << std::setw(4) << std::setfill('0')
+        << static_cast<unsigned>((high << 8) | low);
+    return s.str();
+}
+
+std::string hex4(uint16_t value)
+{
+    std::ostringstream s;
+    s << std::uppercase << std::hex << std::setw(4) << std::setfill('0')
+        << static_cast<unsigned>(value);
+    return s.str();
+}
+
+std::string hex8(uint32_t value)
+{
+    std::ostringstream ss;
+
+    ss << std::uppercase
+       << std::hex
+       << std::setfill('0')
+       << std::setw(8)
+       << static_cast<uint32_t>(value);
+
+    return ss.str();
+}
+
+std::string trimCopy(std::string s)
+{
+    auto notSpace = [](int ch){ return !std::isspace(ch); };
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), notSpace));
+    s.erase(std::find_if(s.rbegin(), s.rend(), notSpace).base(), s.end());
+    return s;
+}
+
+std::string sanitizeAddrToken(std::string s) {
+    s = trimCopy(std::move(s));
+    s.erase(std::remove(s.begin(), s.end(), '_'), s.end()); // allow underscores
+    if (!s.empty() && (s.back()=='h' || s.back()=='H')) s.pop_back(); // allow trailing h
+    return s;
+}
+
+std::pair<uint16_t,uint16_t> parseRangePair(std::string input)
+{
+    if (input.empty()) throw std::runtime_error("Invalid range: empty");
+    std::string s = trimCopy(std::move(input));
+
+    // Normalize separators
+    if (auto p = s.find(".."); p != std::string::npos) s.replace(p, 2, "-");
+    if (auto p = s.find(':');  p != std::string::npos) s[p] = '-';
+
+    auto dash = s.find('-');
+    if (dash == std::string::npos)
+    {
+        uint16_t a = parseAddress(sanitizeAddrToken(s));
+        return {a, a};
+    }
+
+    std::string left  = sanitizeAddrToken(s.substr(0, dash));
+    std::string right = sanitizeAddrToken(s.substr(dash + 1));
+    if (left.empty() || right.empty()) throw std::runtime_error("Invalid range: missing endpoint");
+
+    uint16_t a = parseAddress(left);
+    uint16_t b = parseAddress(right);
+    if (a > b) std::swap(a, b);
+    return {a, b};
+}
+
+std::string joinArgs(const std::vector<std::string>& args, size_t start)
+{
+    std::ostringstream oss;
+
+    for (size_t i = start; i < args.size(); ++i)
+    {
+        if (i != start)
+            oss << ' ';
+
+        oss << args[i];
+    }
+
+    return oss.str();
+}
+
+uint16_t make16(uint8_t hi, uint8_t lo)
+{
+    return static_cast<uint16_t>((static_cast<uint16_t>(hi) << 8) | lo);
+}
