@@ -241,7 +241,12 @@ uint8_t PPU::readRegister(uint16_t address) const
             return scx;
 
         case 0xFF44:
-            return ly;
+            // During scanline 153, LY reads as 153 for the first few dots,
+            // then reads as 0 for the remainder of the scanline.
+            if (ly == 153 && dots >= 4)
+                return 0;
+
+    return ly;
 
         case 0xFF45:
             return lyc;
