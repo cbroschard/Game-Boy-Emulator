@@ -154,15 +154,34 @@ void VideoOutput::renderGameFrame()
     int windowWidth = 0;
     int windowHeight = 0;
 
-    SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+    SDL_GetWindowSize(
+        window,
+        &windowWidth,
+        &windowHeight
+    );
+
+    // Reserve room for the ImGui main menu bar.
+    const float menuBarHeight = ImGui::GetFrameHeight();
+
+    const float availableWidth =
+        static_cast<float>(windowWidth);
+
+    const float availableHeight =
+        std::max(
+            1.0f,
+            static_cast<float>(windowHeight) - menuBarHeight
+        );
 
     const float scaleX =
-        static_cast<float>(windowWidth) / static_cast<float>(SCREEN_WIDTH);
+        availableWidth /
+        static_cast<float>(SCREEN_WIDTH);
 
     const float scaleY =
-        static_cast<float>(windowHeight) / static_cast<float>(SCREEN_HEIGHT);
+        availableHeight /
+        static_cast<float>(SCREEN_HEIGHT);
 
-    const float scale = std::min(scaleX, scaleY);
+    const float scale =
+        std::min(scaleX, scaleY);
 
     const float outputWidth =
         static_cast<float>(SCREEN_WIDTH) * scale;
@@ -171,12 +190,23 @@ void VideoOutput::renderGameFrame()
         static_cast<float>(SCREEN_HEIGHT) * scale;
 
     SDL_FRect dest;
-    dest.x = (static_cast<float>(windowWidth) - outputWidth) * 0.5f;
-    dest.y = (static_cast<float>(windowHeight) - outputHeight) * 0.5f;
+
+    dest.x =
+        (availableWidth - outputWidth) * 0.5f;
+
+    dest.y =
+        menuBarHeight +
+        (availableHeight - outputHeight) * 0.5f;
+
     dest.w = outputWidth;
     dest.h = outputHeight;
 
-    SDL_RenderTexture(renderer, texture, nullptr, &dest);
+    SDL_RenderTexture(
+        renderer,
+        texture,
+        nullptr,
+        &dest
+    );
 }
 
 void VideoOutput::endFrame()

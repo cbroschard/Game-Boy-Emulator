@@ -111,20 +111,31 @@ void PPU::tick(int cyclesElapsed)
             ly = 0;
             windowLineCounter = 0;
 
-            setMode(PPUMode::OAM);
+            mode = PPUMode::OAM;
+            stat = (stat & 0xFC) | static_cast<uint8_t>(mode);
+
             updateLYCCompare();
         }
         else
         {
             ly++;
-            updateLYCCompare();
 
             if (ly == 144)
             {
-                setMode(PPUMode::VBlank);
-                requestVBlankInterrupt();
+                mode = PPUMode::VBlank;
+                stat = (stat & 0xFC) | static_cast<uint8_t>(mode);
 
+                updateLYCCompare();
+
+                requestVBlankInterrupt();
                 frameReady = true;
+            }
+            else
+            {
+                mode = PPUMode::OAM;
+                stat = (stat & 0xFC) | static_cast<uint8_t>(mode);
+
+                updateLYCCompare();
             }
         }
     }
@@ -135,7 +146,7 @@ void PPU::tick(int cyclesElapsed)
         return;
     }
 
-    if (dots >= 252 && !scanLineRendered)
+    if (dots >= 80 && !scanLineRendered)
     {
         renderScanline(ly);
         scanLineRendered = true;
