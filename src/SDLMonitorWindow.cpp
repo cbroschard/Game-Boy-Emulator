@@ -10,7 +10,7 @@
 #include <cstring>
 
 // Color Definitions
-static const SDL_Color COL_TEXT   = {160, 160, 255, 255}; // C64 Light Blue
+static const SDL_Color COL_TEXT   = {160, 160, 255, 255}; // // Standard monitor text
 static const SDL_Color COL_PROMPT = {100, 255, 100, 255}; // Green
 static const SDL_Color COL_ERROR  = {255, 80,  80,  255}; // Red
 static const SDL_Color COL_HEADER = {255, 255, 255, 255}; // White
