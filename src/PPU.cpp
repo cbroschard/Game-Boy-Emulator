@@ -23,7 +23,8 @@ PPU::PPU() :
     obp1(0xFF),
     wy(0),
     wx(0),
-    dots(0)
+    dots(0),
+    windowLineCounter(0)
 {
     mode = PPUMode::OAM;
 }
@@ -57,6 +58,7 @@ void PPU::reset()
     wy                  = 0;
     wx                  = 0;
     dots                = 0;
+    windowLineCounter   = 0;
 
     frameReady          = false;
     scanLineRendered    = false;
@@ -70,6 +72,8 @@ void PPU::tick(int cyclesElapsed)
     {
         dots = 0;
         ly = 0;
+        windowLineCounter = 0;
+
         frameReady = false;
         scanLineRendered = false;
 
@@ -93,6 +97,7 @@ void PPU::tick(int cyclesElapsed)
             setMode(PPUMode::VBlank);
             requestVBlankInterrupt();
             frameReady = true;
+            windowLineCounter = 0;
         }
         else if (ly > 153)
         {
@@ -157,6 +162,7 @@ void PPU::saveState(StateWriter& wrtr) const
     wrtr.writeU8(wx);
 
     wrtr.writeU16(dots);
+    wrtr.writeU8(windowLineCounter);
 
     wrtr.endChunk();
 }
@@ -200,6 +206,7 @@ bool PPU::loadState(const StateReader::Chunk& chunk, StateReader& rdr)
     if (!rdr.readU8(wx))                                            { rdr.exitChunkPayload(chunk); return false; }
 
     if (!rdr.readU16(dots))                                         { rdr.exitChunkPayload(chunk); return false; }
+    if (!rdr.readU8(windowLineCounter))                             { rdr.exitChunkPayload(chunk); return false; }
 
     stat |= 0x80;
     stat = (stat & 0xFC) | static_cast<uint8_t>(mode);
@@ -275,6 +282,7 @@ void PPU::writeRegister(uint16_t address, uint8_t value)
             {
                 dots = 0;
                 ly = 0;
+                windowLineCounter = 0;
                 scanLineRendered = false;
                 mode = PPUMode::HBlank;
                 stat = (stat & 0xFC) | static_cast<uint8_t>(PPUMode::HBlank);
@@ -427,28 +435,39 @@ void PPU::renderScanline(uint8_t line)
 
     uint8_t bgColorIds[160];
 
-    for (uint16_t x = 0; x < 160; x++)
+    const int windowLeft = int(wx) - 7;
+
+    const bool windowCanRender =
+        isWindowEnabled() &&
+        isBGWindowEnabled() &&
+        line >= wy &&
+        windowLeft < 160;
+
+    bool windowRenderedThisLine = false;
+
+    for (int x = 0; x < 160; x++)
     {
         uint8_t colorId = 0;
 
         if (isBGWindowEnabled())
             colorId = fetchBGPixel(x, line);
 
-        int windowLeft = int(wx) - 7;
-
-        if (isWindowEnabled() &&
-            isBGWindowEnabled() &&
-            line >= wy &&
-            int(x) >= windowLeft)
+        if (windowCanRender && x >= windowLeft)
         {
-            colorId = fetchWindowPixel(x, line);
+            colorId = fetchWindowPixel(x);
+            windowRenderedThisLine = true;
         }
 
         bgColorIds[x] = colorId;
 
-        uint8_t shade = (bgp >> (colorId * 2)) & 0x03;
+        const uint8_t shade =
+            static_cast<uint8_t>((bgp >> (colorId * 2)) & 0x03);
+
         framebuffer[line * 160 + x] = dmgShadeToRGB(shade);
     }
+
+    if (windowRenderedThisLine)
+        windowLineCounter++;
 
     if (areSpritesEnabled())
         renderSpritesOnScanline(line, bgColorIds);
@@ -567,50 +586,66 @@ void PPU::drawSpriteLine(const SpriteEntry& sprite, uint8_t line, const uint8_t 
     }
 }
 
-uint8_t PPU::fetchWindowPixel(int x, int y)
+uint8_t PPU::fetchWindowPixel(int x)
 {
     if (!isWindowEnabled() || !isBGWindowEnabled())
         return 0;
 
-    int windowLeft = int(wx) - 7;
-    int windowTop  = int(wy);
+    const int windowLeft = int(wx) - 7;
 
-    if (x < windowLeft || y < windowTop)
+    if (x < windowLeft)
         return 0;
 
-    int windowX = x - windowLeft;
-    int windowY = y - windowTop;
+    const int windowX = x - windowLeft;
+    const int windowY = windowLineCounter;
 
-    int tileCol = windowX / 8;
-    int tileRow = windowY / 8;
+    const int tileCol = windowX / 8;
+    const int tileRow = windowY / 8;
 
-    int pixelX = windowX % 8;
-    int pixelY = windowY % 8;
+    const int pixelX = windowX % 8;
+    const int pixelY = windowY % 8;
 
-    uint16_t tileMapBase = (lcdc & 0x40) ? 0x1C00 : 0x1800;
+    const uint16_t tileMapBase =
+        useWindowTileMapHigh() ? 0x1C00 : 0x1800;
 
-    uint16_t mapIndex = tileRow * 32 + tileCol;
+    const uint16_t mapIndex =
+        static_cast<uint16_t>(tileRow * 32 + tileCol);
 
-    uint8_t tileNumber = vram[tileMapBase + mapIndex];
+    const uint8_t tileNumber =
+        vram[tileMapBase + mapIndex];
 
     uint16_t tileDataAddress;
 
-    if (lcdc & 0x10)
-        tileDataAddress = tileNumber * 16;
+    if (useTileDataUnsigned())
+    {
+        tileDataAddress =
+            static_cast<uint16_t>(tileNumber) * 16;
+    }
     else
-        tileDataAddress = uint16_t(0x1000 + int16_t(int8_t(tileNumber)) * 16);
+    {
+        const int8_t signedTile =
+            static_cast<int8_t>(tileNumber);
 
-    uint16_t rowAddress = tileDataAddress + pixelY * 2;
+        tileDataAddress = static_cast<uint16_t>(
+            0x1000 + static_cast<int16_t>(signedTile) * 16
+        );
+    }
 
-    uint8_t lowByte  = vram[rowAddress];
-    uint8_t highByte = vram[rowAddress + 1];
+    const uint16_t rowAddress =
+        tileDataAddress + static_cast<uint16_t>(pixelY * 2);
 
-    int bit = 7 - pixelX;
+    const uint8_t lowByte = vram[rowAddress];
+    const uint8_t highByte = vram[rowAddress + 1];
 
-    uint8_t lowBit  = (lowByte  >> bit) & 1;
-    uint8_t highBit = (highByte >> bit) & 1;
+    const int bit = 7 - pixelX;
 
-    return lowBit | (highBit << 1);
+    const uint8_t lowBit =
+        static_cast<uint8_t>((lowByte >> bit) & 0x01);
+
+    const uint8_t highBit =
+        static_cast<uint8_t>((highByte >> bit) & 0x01);
+
+    return static_cast<uint8_t>(lowBit | (highBit << 1));
 }
 
 void PPU::renderSpritesOnScanline(uint8_t line, const uint8_t bgColorIds[160])

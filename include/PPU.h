@@ -95,6 +95,7 @@ class PPU
         uint8_t wx;
 
         uint16_t dots;
+        uint8_t windowLineCounter;
 
         inline bool isLCDEnabled() const            { return lcdc & 0x80; }
         inline bool useWindowTileMapHigh() const    { return lcdc & 0x40; }
@@ -115,7 +116,7 @@ class PPU
         void renderScanline(uint8_t line);
 
         uint8_t fetchBGPixel(int x, int y);
-        uint8_t fetchWindowPixel(int x, int y);
+        uint8_t fetchWindowPixel(int x);
 
         uint32_t dmgShadeToRGB(uint8_t shade);
 
