@@ -138,9 +138,6 @@ Operand syntax:
         SET 7,C
 
 Notes:
-    - Do not use the 6502 immediate prefix '#'.
-      Use LD A,$12 instead of LDA #$12.
-
     - CB-prefixed instructions such as BIT, RES, SET, RLC, and SWAP
       automatically receive the $CB prefix.
 
