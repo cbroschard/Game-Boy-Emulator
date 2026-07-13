@@ -118,6 +118,12 @@ class PPU
         uint8_t fetchBGPixel(int x, int y);
         uint8_t fetchWindowPixel(int x);
 
+        uint8_t getVisibleLY() const;
+
+        void updateStatInterruptSignal();
+
+        bool previousStatSignal;
+
         uint32_t dmgShadeToRGB(uint8_t shade);
 
         inline bool areSpritesEnabled() const { return (lcdc & 0x02) != 0; }
