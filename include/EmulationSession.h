@@ -40,7 +40,8 @@ class EmulationSession
 
         void run();
 
-        inline void setBIOSPath(const std::string& path) { biosPath = path; }
+        inline void setDMGBIOSPath(const std::string& path) { dmgBIOSPath = path; }
+        inline void setGBCBIOSPath(const std::string& path) { gbcBIOSPath = path; }
         inline void setCartridgePath(const std::string &path) { cartridgePath = path; }
 
         inline bool loadCartridge(const std::string& path) { return cartridge.loadCartridge(path); }
@@ -81,7 +82,8 @@ class EmulationSession
 
         UIBridge uiBridge;
 
-        std::string biosPath;
+        std::string dmgBIOSPath;
+        std::string gbcBIOSPath;
         std::string cartridgePath;
 
         void wireUp();

@@ -56,14 +56,14 @@ void EmulationSession::reset()
 
 void EmulationSession::run()
 {
-    if (biosPath.empty())
+    if (dmgBIOSPath.empty())
         throw std::runtime_error("BIOS path has not been set.");
 
     if (cartridgePath.empty())
         throw std::runtime_error("Cartridge path has not been set.");
 
-    if (!loadBIOS(biosPath))
-        throw std::runtime_error("Failed to load BIOS: " + biosPath);
+    if (!loadBIOS(dmgBIOSPath))
+        throw std::runtime_error("Failed to load DMG BIOS: " + dmgBIOSPath);
 
     if (!loadCartridge(cartridgePath))
         throw std::runtime_error("Failed to load Cartridge: " + cartridgePath);
