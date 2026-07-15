@@ -16,6 +16,7 @@ class APU;
 class Cartridge;
 class Joypad;
 class Memory;
+class MLMonitor;
 class PPU;
 class Timer;
 
@@ -38,6 +39,7 @@ class Bus
         inline void attachCartridgeInstance(Cartridge* cartridge) { this->cartridge = cartridge; }
         inline void attachJoypadInstance(Joypad* joypad) { this->joypad = joypad; }
         inline void attachMemoryInstance(Memory* memory) { this->memory = memory; }
+        inline void attachMLMonitorInstance(MLMonitor* mlMonitor) { this->mlMonitor = mlMonitor; }
         inline void attachPPUInstance(PPU* ppu) { this->ppu = ppu; }
         inline void attachTimerInstance(Timer* timer) { this->timer = timer; }
 
@@ -54,12 +56,18 @@ class Bus
         bool loadState(const StateReader::Chunk& chunk, StateReader& rdr);
 
         uint8_t read(uint16_t address);
+        uint8_t readInternal(uint16_t address);
         void write(uint16_t address, uint8_t value);
+        void writeInternal(uint16_t address, uint8_t value);
 
         void requestInterrupt(Interrupt interrupt);
         void clearInterrupt(Interrupt interrupt);
 
         inline uint8_t getInterruptFlags() const { return interruptStatus | 0xE0; }
+
+        // Monitor access
+        inline uint8_t peek(uint16_t address) { return readInternal(address); }
+        inline void poke(uint16_t address, uint8_t value) { writeInternal(address, value); }
 
     protected:
 
@@ -68,6 +76,7 @@ class Bus
         Cartridge* cartridge;
         Joypad* joypad;
         Memory* memory;
+        MLMonitor* mlMonitor;
         PPU* ppu;
         Timer* timer;
 
@@ -102,6 +111,9 @@ class Bus
         // IO constants
         static constexpr uint16_t IO_START = 0xFF00;
         static constexpr uint16_t IO_END   = 0xFF7F;
+
+        static constexpr uint16_t APU_REGISTER_START = 0xFF10;
+        static constexpr uint16_t APU_REGISTER_END   = 0xFF3F;
 
         static constexpr uint16_t JOYPAD_REGISTER = 0xFF00;
 

@@ -237,6 +237,7 @@ void EmulationSession::wireUp()
     bus.attachCartridgeInstance(&cartridge);
     bus.attachJoypadInstance(&joypad);
     bus.attachMemoryInstance(&memory);
+    bus.attachMLMonitorInstance(&mlMonitor);
     bus.attachPPUInstance(&ppu);
     bus.attachTimerInstance(&timer);
 

@@ -46,9 +46,28 @@ class MLMonitor
         void clearBreakpoint(uint16_t bp);
         void listBreakpoints() const;
 
+        // Watch write handling
+        void addWriteWatch(uint16_t address);
+        void clearWriteWatch(uint16_t address);
+        void clearAllWriteWatches();
+        void listWriteWatches() const;
+        bool checkWatchWrite(uint16_t address, uint8_t newVal);
+        std::vector<uint16_t> getWriteWatchAddresses() const;
+
+        // Watch read handling
+        void addReadWatch(uint16_t address);
+        void clearReadWatch(uint16_t address);
+        void clearAllReadWatches();
+        void listReadWatches() const;
+        bool checkWatchRead(uint16_t address, uint8_t value);
+        std::vector<uint16_t> getReadWatchAddresses() const;
+
         // std::cout queuing/draining
         void queueAsyncLine(const std::string& s);
         std::vector<std::string> drainAsyncLines();
+
+        inline void requestBreak() { breakRequested = true; }
+        bool consumeBreakRequested();
 
         // Helpers
         inline bool breakpointsEmpty() const { return breakpoints.empty(); }
@@ -61,9 +80,14 @@ class MLMonitor
         MLMonitorBackend* mlMonitorBackend;
 
         bool running;
+        bool breakRequested;
 
         // Breakpoint
         std::unordered_set<uint16_t> breakpoints;
+
+        // Watches
+        std::unordered_map<uint16_t, uint8_t> writeWatches; // addr -> last value
+        std::unordered_set<uint16_t> readWatches;
 
         // std::cout queue
         std::mutex asyncMutex;

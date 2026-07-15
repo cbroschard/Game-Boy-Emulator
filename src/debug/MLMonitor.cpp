@@ -17,6 +17,7 @@
 MLMonitor::MLMonitor() :
     mlMonitorBackend(nullptr),
     running(false),
+    breakRequested(false),
     outputFileEnabled(false)
 {
     registerCommand(std::make_unique<AssembleCommand>());
@@ -94,6 +95,142 @@ void MLMonitor::listBreakpoints() const
             << std::setfill(' ')
             << "\n";
     }
+}
+
+void MLMonitor::addWriteWatch(uint16_t address)
+{
+    uint8_t value = mlMonitorBackend->readRAM(address);
+    writeWatches[address] = value;
+    std::cout << "Watchpoint set at $" << std::hex << std::setw(4) << std::setfill('0') << address
+              << " (initial value = $" << std::setw(2) << static_cast<int>(value) << ")\n";
+}
+
+void MLMonitor::clearWriteWatch(uint16_t address)
+{
+    if (writeWatches.erase(address))
+        std::cout << "Watchpoint cleared at $" << std::hex << std::setw(4) << std::setfill('0') << address << "\n";
+    else
+        std::cout << "No watchpoint found at $" << std::hex << std::setw(4) << std::setfill('0') << address << "\n";
+}
+
+void MLMonitor::clearAllWriteWatches()
+{
+    for (auto it = writeWatches.begin(); it != writeWatches.end(); )
+    {
+        uint16_t address = it->first;
+        std::cout << "Watchpoint cleared at $"
+                  << std::hex << std::setw(4) << std::setfill('0')
+                  << address << "\n";
+
+        it = writeWatches.erase(it); // erase returns next valid iterator
+    }
+
+    std::cout << "All writeWatches cleared.\n";
+}
+
+void MLMonitor::listWriteWatches() const
+{
+    int index = 0;
+    for (const auto& [address, value] : writeWatches)
+    {
+        std::cout << "[" << index << "]  $" << std::hex << std::setw(4) << std::setfill('0') << address
+                  << " (last value=$" << std::setw(2) << static_cast<int>(value) << ")\n";
+        index++;
+    }
+}
+
+bool MLMonitor::checkWatchWrite(uint16_t address, uint8_t newVal)
+{
+    auto it = writeWatches.find(address);
+    if (it != writeWatches.end())
+    {
+        if (it->second != newVal)
+        {
+            uint8_t oldVal = it->second;
+            it->second = newVal;
+
+            std::ostringstream oss;
+            oss << ">>> Watchpoint hit at $"
+                << std::hex << std::setw(4) << std::setfill('0') << address
+                << ": old=$" << std::setw(2) << static_cast<int>(oldVal)
+                << " new=$" << std::setw(2) << static_cast<int>(newVal);
+
+            queueAsyncLine(oss.str());
+            return true;
+        }
+    }
+    return false;
+}
+
+void MLMonitor::addReadWatch(uint16_t address)
+{
+    readWatches.insert(address);
+    std::cout << "Read watchpoint set at $" << std::hex << std::setw(4) << std::setfill('0') << address << "\n";
+}
+
+std::vector<uint16_t> MLMonitor::getWriteWatchAddresses() const
+{
+    std::vector<uint16_t> out;
+    out.reserve(writeWatches.size());
+    for (const auto& kv : writeWatches) out.push_back(kv.first);
+    return out;
+}
+
+void MLMonitor::clearReadWatch(uint16_t address)
+{
+    if (readWatches.erase(address))
+        std::cout << "Read watchpoint cleared at $" << std::hex << std::setw(4) << std::setfill('0') << address << "\n";
+    else
+        std::cout << "No read watchpoint found at $" << std::hex << std::setw(4) << std::setfill('0') << address << "\n";
+}
+
+void MLMonitor::clearAllReadWatches()
+{
+    for (auto it = readWatches.begin(); it != readWatches.end(); )
+    {
+        uint16_t addr = *it;
+        std::cout << "Read watchpoint cleared at $" << std::hex << std::setw(4) << std::setfill('0') << addr << "\n";
+        it = readWatches.erase(it);
+    }
+    std::cout << "All read watchpoints cleared.\n";
+}
+
+void MLMonitor::listReadWatches() const
+{
+    int index = 0;
+    for (auto addr : readWatches)
+    {
+        std::cout << "[" << index++ << "]  $" << std::hex << std::setw(4) << std::setfill('0') << addr << "\n";
+    }
+}
+
+bool MLMonitor::checkWatchRead(uint16_t address, uint8_t value)
+{
+    if (readWatches.find(address) != readWatches.end())
+    {
+        std::ostringstream oss;
+        oss << ">>> Read watchpoint hit at $"
+            << std::hex << std::setw(4) << std::setfill('0') << address
+            << " (value=$" << std::setw(2) << static_cast<int>(value) << ")";
+
+        queueAsyncLine(oss.str());
+        return true;
+    }
+    return false;
+}
+
+std::vector<uint16_t> MLMonitor::getReadWatchAddresses() const
+{
+    return std::vector<uint16_t>(readWatches.begin(), readWatches.end());
+}
+
+bool MLMonitor::consumeBreakRequested()
+{
+    if (!breakRequested)
+        return false;
+
+    breakRequested = false;
+    return true;
 }
 
 std::string MLMonitor::executeAndCapture(const std::string& cmdLine)

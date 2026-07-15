@@ -10,6 +10,7 @@
 #include "Cartridge.h"
 #include "Joypad.h"
 #include "Memory.h"
+#include "MLMonitor.h"
 #include "PPU.h"
 #include "Timer.h"
 
@@ -18,6 +19,7 @@ Bus::Bus() :
     cartridge(nullptr),
     joypad(nullptr),
     memory(nullptr),
+    mlMonitor(nullptr),
     ppu(nullptr),
     timer(nullptr),
     interruptStatus(0xE1)
@@ -68,10 +70,20 @@ bool Bus::loadState(const StateReader::Chunk& chunk, StateReader& rdr)
 
 uint8_t Bus::read(uint16_t address)
 {
+    const uint8_t value = readInternal(address);
+
+    if (mlMonitor && mlMonitor->checkWatchRead(address, value))
+        mlMonitor->requestBreak();
+
+    return value;
+}
+
+uint8_t Bus::readInternal(uint16_t address)
+{
     if (!memory)
         return 0xFF;
 
-    if (memory && memory->isBootRomEnabled() && address <= 0x00FF)
+    if (memory->isBootRomEnabled() && address <= 0x00FF)
         return memory->readBootROM(address);
 
     if (address >= ROM_FIXED_START && address <= ROM_SWITCHABLE_END)
@@ -82,13 +94,8 @@ uint8_t Bus::read(uint16_t address)
         return 0xFF;
     }
 
-    if (address == 0xFF00)
-    {
-        if (joypad)
-            return joypad->read();
-
-        return 0xFF;
-    }
+    if (address >= VRAM_START && address <= VRAM_END)
+        return ppu ? ppu->readVRAM(address - VRAM_START) : 0xFF;
 
     if (address >= EXTERNAL_RAM_START && address <= EXTERNAL_RAM_END)
     {
@@ -97,9 +104,6 @@ uint8_t Bus::read(uint16_t address)
 
         return 0xFF;
     }
-
-    if (address >= VRAM_START && address <= VRAM_END)
-        return ppu ? ppu->readVRAM(address - VRAM_START) : 0xFF;
 
     if (address >= WRAM_START && address <= WRAM_END)
         return memory->readWRAM(address - WRAM_START);
@@ -130,18 +134,21 @@ void Bus::write(uint16_t address, uint8_t value)
     if (!memory)
         return;
 
+    writeInternal(address, value);
+
+    if (mlMonitor && mlMonitor->checkWatchWrite(address, value))
+        mlMonitor->requestBreak();
+}
+
+void Bus::writeInternal(uint16_t address, uint8_t value)
+{
+    if (!memory)
+        return;
+
     if (address >= ROM_FIXED_START && address <= ROM_SWITCHABLE_END)
     {
         if (cartridge)
             cartridge->writeROM(address, value); // MBC control write
-
-        return;
-    }
-
-    if (address == 0xFF00)
-    {
-        if (joypad)
-            joypad->write(value);
 
         return;
     }
@@ -206,11 +213,14 @@ void Bus::write(uint16_t address, uint8_t value)
 
 uint8_t Bus::readIO(uint16_t address)
 {
-    if (address >= 0xFF10 && address <= 0xFF3F)
+    if (address >= APU_REGISTER_START && address <= APU_REGISTER_END)
         return apu ? apu->readRegister(address) : 0xFF;
 
     switch (address)
     {
+        case JOYPAD_REGISTER:
+            return joypad ? joypad->read() : 0xFF;
+
         case DIV_REGISTER:
         case TIMA_REGISTER:
         case TMA_REGISTER:
@@ -240,7 +250,7 @@ uint8_t Bus::readIO(uint16_t address)
 
 void Bus::writeIO(uint16_t address, uint8_t value)
 {
-    if (address >= 0xFF10 && address <= 0xFF3F)
+    if (address >= APU_REGISTER_START && address <= APU_REGISTER_END)
     {
         if (apu)
             apu->writeRegister(address, value);
@@ -282,11 +292,11 @@ void Bus::writeIO(uint16_t address, uint8_t value)
         {
             memory->writeIO(address - IO_START, value);
 
-            uint16_t source = static_cast<uint16_t>(value) << 8;
+            const uint16_t source = static_cast<uint16_t>(value) << 8;
 
             for (uint16_t i = 0; i < 0xA0; i++)
             {
-                uint8_t byte = read(source + i);
+                const uint8_t byte = readInternal(source + i);
 
                 if (ppu)
                     ppu->writeOAM(i, byte);
@@ -299,6 +309,14 @@ void Bus::writeIO(uint16_t address, uint8_t value)
             interruptStatus = value | 0xE0;
             memory->writeIO(address - IO_START, interruptStatus);
             return;
+
+        case JOYPAD_REGISTER:
+        {
+            if (joypad)
+                joypad->write(value);
+
+            return;
+        }
 
         case 0xFF50:
             memory->writeIO(address - IO_START, value);
