@@ -215,3 +215,27 @@ void MLMonitorBackend::printCPUState() const
 
     std::cout << std::setfill(' ') << std::nouppercase;
 }
+
+LR35902DisassembledInstruction MLMonitorBackend::disassembleAt(uint16_t address) const
+{
+    LR35902Disassembler disassembler(
+        [this](uint16_t address) -> uint8_t
+        {
+            return debugRead(address);
+        });
+
+    return disassembler.disassemble(address);
+}
+
+uint8_t MLMonitorBackend::debugRead(uint16_t address) const
+{
+    return bus->read(address);
+}
+
+int MLMonitorBackend::stepInstruction()
+{
+    if (cpu == nullptr)
+        return 0;
+
+    return cpu->debugStepInstruction();
+}

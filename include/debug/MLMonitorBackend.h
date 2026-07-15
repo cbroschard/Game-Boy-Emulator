@@ -11,6 +11,7 @@
 #include <cstdint>
 #include "Bus.h"
 #include "CPU.h"
+#include "debug/lr35902/LR35902Disassembler.h"
 
 class APU;
 class Cartridge;
@@ -48,11 +49,17 @@ class MLMonitorBackend
         inline uint16_t getPC() const { return cpu->getPC(); }
         inline void setPC(uint16_t address) { cpu->setPC(address); }
 
+        // Step Command API
+        LR35902DisassembledInstruction disassembleAt(uint16_t address) const;
+        int stepInstruction();
+
         void printCPUCycles() const;
         void printCPUFlags() const;
         void printCPUIRQState() const;
         void printCPUStack(int count) const;
         void printCPUState() const;
+
+        uint8_t debugRead(uint16_t address) const;
 
     protected:
 

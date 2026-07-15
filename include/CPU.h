@@ -74,7 +74,9 @@ class CPU
         inline void setSP(uint16_t value) { SP = value; }
         inline void setPC(uint16_t value) { PC = value; }
 
+        // MLMonitor
         lr35902CPUState getCPUState() const;
+        inline int debugStepInstruction() { return step(); }
 
     protected:
 
