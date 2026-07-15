@@ -74,6 +74,8 @@ class EmulationSession
         bool pendingSaveState;
         bool pendingLoadState;
 
+        bool skipNextBreakpointCheck;
+
         std::string pendingSavePath;
         std::string pendingLoadPath;
 

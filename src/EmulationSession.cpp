@@ -5,6 +5,8 @@
 // non-commercial use only. Redistribution, modification, or use
 // of this code in whole or in part for any other purpose is
 // strictly prohibited without the prior written consent of the author.
+#include <iomanip>
+#include <sstream>
 #include <stdexcept>
 #include "EmulationSession.h"
 
@@ -13,6 +15,7 @@ EmulationSession::EmulationSession() :
     running(true),
     pendingSaveState(false),
     pendingLoadState(false),
+    skipNextBreakpointCheck(false),
     uiBridge
     (
         ui,
@@ -140,6 +143,32 @@ void EmulationSession::run()
                    frameCycles < CYCLES_PER_FRAME &&
                    running)
             {
+
+                const uint16_t pc = cpu.getPC();
+
+                if (skipNextBreakpointCheck)
+                {
+                        skipNextBreakpointCheck = false;
+                }
+                else if (mlMonitor.hasBreakpoint(pc))
+                {
+                    std::ostringstream message;
+
+                    message
+                        << "Breakpoint hit at $"
+                        << std::uppercase
+                        << std::hex
+                        << std::setw(4)
+                        << std::setfill('0')
+                        << pc;
+
+                    mlMonitor.queueAsyncLine(message.str());
+                    skipNextBreakpointCheck = true;
+
+                    monitorController.openMonitor();
+                    break;
+                }
+
                 const int cpuCycles = cpu.step();
 
                 if (cpuCycles <= 0)

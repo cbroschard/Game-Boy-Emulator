@@ -7,6 +7,7 @@
 // strictly prohibited without the prior written consent of the author.
 #include "debug/MLMonitor.h"
 #include "debug/AssembleCommand.h"
+#include "debug/BreakpointCommand.h"
 #include "debug/CPUCommand.h"
 #include "debug/DisassembleCommand.h"
 #include "debug/GoCommand.h"
@@ -19,6 +20,7 @@ MLMonitor::MLMonitor() :
     outputFileEnabled(false)
 {
     registerCommand(std::make_unique<AssembleCommand>());
+    registerCommand(std::make_unique<BreakpointCommand>());
     registerCommand(std::make_unique<CPUCommand>());
     registerCommand(std::make_unique<DisassembleCommand>());
     registerCommand(std::make_unique<GoCommand>());
@@ -57,6 +59,43 @@ std::string MLMonitor::getPrompt() const
     return "> ";
 }
 
+void MLMonitor::clearBreakpoint(uint16_t bp)
+{
+    auto record = breakpoints.find(bp);
+    if (record != breakpoints.end())
+    {
+        breakpoints.erase(bp);
+    }
+}
+
+void MLMonitor::listBreakpoints() const
+{
+    std::vector<uint16_t> sortedBreakpoints(
+        breakpoints.begin(),
+        breakpoints.end());
+
+    std::sort(
+        sortedBreakpoints.begin(),
+        sortedBreakpoints.end());
+
+    for (std::size_t index = 0;
+         index < sortedBreakpoints.size();
+         ++index)
+    {
+        std::cout
+            << "[" << index << "]  $"
+            << std::uppercase
+            << std::hex
+            << std::setw(4)
+            << std::setfill('0')
+            << sortedBreakpoints[index]
+            << std::dec
+            << std::nouppercase
+            << std::setfill(' ')
+            << "\n";
+    }
+}
+
 std::string MLMonitor::executeAndCapture(const std::string& cmdLine)
 {
     std::ostringstream buffer;
@@ -83,6 +122,12 @@ std::string MLMonitor::executeAndCapture(const std::string& cmdLine)
     writeOutputFileBlock(cmdLine, out);
 
     return out;
+}
+
+void MLMonitor::queueAsyncLine(const std::string& s)
+{
+    std::lock_guard<std::mutex> lock(asyncMutex);
+    asyncLines.push_back(s);
 }
 
 std::vector<std::string> MLMonitor::drainAsyncLines()

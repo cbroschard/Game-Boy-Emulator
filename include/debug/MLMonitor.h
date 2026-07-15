@@ -40,9 +40,19 @@ class MLMonitor
         void enterMonitor();
         std::string getPrompt() const;
 
+        // Breakpoint management
+        inline void addBreakpoint(uint16_t bp) { breakpoints.insert(bp); }
+        inline void clearAllBreakpoints() { breakpoints.clear(); }
+        void clearBreakpoint(uint16_t bp);
+        void listBreakpoints() const;
+
         // std::cout queuing/draining
         void queueAsyncLine(const std::string& s);
         std::vector<std::string> drainAsyncLines();
+
+        // Helpers
+        inline bool breakpointsEmpty() const { return breakpoints.empty(); }
+        inline bool hasBreakpoint(uint16_t pc) { return (breakpoints.find(pc) != breakpoints.end()); }
 
     protected:
 
@@ -51,6 +61,9 @@ class MLMonitor
         MLMonitorBackend* mlMonitorBackend;
 
         bool running;
+
+        // Breakpoint
+        std::unordered_set<uint16_t> breakpoints;
 
         // std::cout queue
         std::mutex asyncMutex;
