@@ -21,6 +21,40 @@ class Cartridge
         Cartridge();
         virtual ~Cartridge();
 
+        struct CartridgeInfo
+        {
+            bool loaded = false;
+
+            std::string title;
+            std::string cartridgeType;
+            std::string mapperType;
+
+            uint8_t cartridgeTypeCode = 0;
+            uint8_t romSizeCode = 0;
+            uint8_t ramSizeCode = 0;
+
+            std::size_t romSizeBytes = 0;
+            std::size_t ramSizeBytes = 0;
+
+            std::size_t romBankCount = 0;
+            std::size_t ramBankCount = 0;
+
+            bool hasRAM = false;
+            bool ramEnabled = false;
+            bool hasBattery = false;
+            bool hasTimer = false;
+            bool hasRumble = false;
+
+            uint16_t selectedROMBank = 0;
+            uint8_t selectedRAMBank = 0;
+            uint8_t bankingMode = 0;
+
+            uint8_t sgbFlag = 0;
+            uint8_t destinationCode = 0;
+            uint8_t maskROMVersion = 0;
+            uint8_t headerChecksum = 0;
+        };
+
         void reset();
 
         void saveState(StateWriter& wrtr) const;
@@ -34,6 +68,7 @@ class Cartridge
         uint8_t readRAM(uint16_t offset);
         void writeRAM(uint16_t offset, uint8_t value);
 
+        CartridgeInfo getCartridgeInfo() const;
 
     protected:
 
@@ -146,6 +181,10 @@ class Cartridge
         size_t getRAMSizeFromCode(uint8_t code) const;
 
         bool isRAMAccessible() const;
+
+        std::string getCartridgeTypeName() const;
+        std::string getMapperTypeName() const;
+        std::string getCartridgeTitle() const;
 };
 
 #endif // CARTRIDGE_H

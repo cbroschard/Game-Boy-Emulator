@@ -315,6 +315,83 @@ void Cartridge::writeRAM(uint16_t offset, uint8_t value)
     cartridgeRAM[effectiveRAMOffset] = value;
 }
 
+Cartridge::CartridgeInfo Cartridge::getCartridgeInfo() const
+{
+    CartridgeInfo info;
+
+    info.loaded = !cartridgeROM.empty();
+
+    if (!info.loaded)
+        return info;
+
+    info.title = getCartridgeTitle();
+    info.cartridgeType = getCartridgeTypeName();
+    info.mapperType = getMapperTypeName();
+
+    info.cartridgeTypeCode =
+        cartridgeHeader.cartridgeType;
+
+    info.romSizeCode =
+        cartridgeHeader.romSizeCode;
+
+    info.ramSizeCode =
+        cartridgeHeader.ramSizeCode;
+
+    info.romSizeBytes =
+        cartridgeROM.size();
+
+    info.ramSizeBytes =
+        cartridgeRAM.size();
+
+    info.romBankCount =
+        cartridgeROM.empty()
+            ? 0
+            : cartridgeROM.size() / 0x4000;
+
+    if (cartridgeRAM.empty())
+    {
+        info.ramBankCount = 0;
+    }
+    else if (cartridgeRAM.size() <= 0x2000)
+    {
+        info.ramBankCount = 1;
+    }
+    else
+    {
+        info.ramBankCount =
+            cartridgeRAM.size() / 0x2000;
+    }
+
+    info.hasRAM = hasRAM;
+    info.ramEnabled = ramEnabled;
+    info.hasBattery = hasBattery;
+    info.hasTimer = hasTimer;
+    info.hasRumble = hasRumble;
+
+    info.selectedROMBank =
+        selectedROMBank;
+
+    info.selectedRAMBank =
+        selectedRAMBank;
+
+    info.bankingMode =
+        bankingMode;
+
+    info.sgbFlag =
+        cartridgeHeader.sgbFlag;
+
+    info.destinationCode =
+        cartridgeHeader.destinationCode;
+
+    info.maskROMVersion =
+        cartridgeHeader.maskROMVersion;
+
+    info.headerChecksum =
+        cartridgeHeader.headerChecksum;
+
+    return info;
+}
+
 bool Cartridge::loadFile(const std::string& path, std::vector<uint8_t>& buffer)
 {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
@@ -519,4 +596,178 @@ bool Cartridge::isRAMAccessible() const
         return true;
 
     return ramEnabled;
+}
+
+std::string Cartridge::getCartridgeTitle() const
+{
+    if (cartridgeROM.empty())
+        return "";
+
+    std::string title;
+
+    for (std::size_t index = 0;
+         index < sizeof(cartridgeHeader.title);
+         ++index)
+    {
+        const unsigned char character =
+            static_cast<unsigned char>(
+                cartridgeHeader.title[index]);
+
+        if (character == 0x00)
+            break;
+
+        if (character >= 0x20 &&
+            character <= 0x7E)
+        {
+            title.push_back(
+                static_cast<char>(character));
+        }
+    }
+
+    while (!title.empty() &&
+           title.back() == ' ')
+    {
+        title.pop_back();
+    }
+
+    return title;
+}
+
+std::string Cartridge::getMapperTypeName() const
+{
+    switch (mapperType)
+    {
+        case MapperType::ROMOnly:
+            return "ROM Only";
+
+        case MapperType::MBC1:
+            return "MBC1";
+
+        case MapperType::MBC2:
+            return "MBC2";
+
+        case MapperType::MMM01:
+            return "MMM01";
+
+        case MapperType::MBC3:
+            return "MBC3";
+
+        case MapperType::MBC5:
+            return "MBC5";
+
+        case MapperType::MBC6:
+            return "MBC6";
+
+        case MapperType::MBC7:
+            return "MBC7";
+
+        case MapperType::HuC1:
+            return "HuC1";
+
+        case MapperType::HuC3:
+            return "HuC3";
+
+        case MapperType::Camera:
+            return "Pocket Camera";
+
+        case MapperType::TAMA5:
+            return "Bandai TAMA5";
+
+        case MapperType::Unsupported:
+            return "Unsupported";
+    }
+
+    return "Unknown";
+}
+
+std::string Cartridge::getCartridgeTypeName() const
+{
+    switch (cartridgeType)
+    {
+        case CartridgeType::ROMOnly:
+            return "ROM Only";
+
+        case CartridgeType::MBC1:
+            return "MBC1";
+
+        case CartridgeType::MBC1RAM:
+            return "MBC1 + RAM";
+
+        case CartridgeType::MBC1RAMBattery:
+            return "MBC1 + RAM + Battery";
+
+        case CartridgeType::MBC2:
+            return "MBC2";
+
+        case CartridgeType::MBC2Battery:
+            return "MBC2 + Battery";
+
+        case CartridgeType::ROMRAM:
+            return "ROM + RAM";
+
+        case CartridgeType::ROMRAMBattery:
+            return "ROM + RAM + Battery";
+
+        case CartridgeType::MMM01:
+            return "MMM01";
+
+        case CartridgeType::MMM01RAM:
+            return "MMM01 + RAM";
+
+        case CartridgeType::MMM01RAMBattery:
+            return "MMM01 + RAM + Battery";
+
+        case CartridgeType::MBC3TimerBattery:
+            return "MBC3 + Timer + Battery";
+
+        case CartridgeType::MBC3TimerRAMBattery:
+            return "MBC3 + Timer + RAM + Battery";
+
+        case CartridgeType::MBC3:
+            return "MBC3";
+
+        case CartridgeType::MBC3RAM:
+            return "MBC3 + RAM";
+
+        case CartridgeType::MBC3RAMBattery:
+            return "MBC3 + RAM + Battery";
+
+        case CartridgeType::MBC5:
+            return "MBC5";
+
+        case CartridgeType::MBC5RAM:
+            return "MBC5 + RAM";
+
+        case CartridgeType::MBC5RAMBattery:
+            return "MBC5 + RAM + Battery";
+
+        case CartridgeType::MBC5Rumble:
+            return "MBC5 + Rumble";
+
+        case CartridgeType::MBC5RumbleRAM:
+            return "MBC5 + Rumble + RAM";
+
+        case CartridgeType::MBC5RumbleRAMBattery:
+            return "MBC5 + Rumble + RAM + Battery";
+
+        case CartridgeType::MBC6:
+            return "MBC6";
+
+        case CartridgeType::MBC7SensorRumbleRAMBattery:
+            return "MBC7 + Sensor + Rumble + RAM + Battery";
+
+        case CartridgeType::PocketCamera:
+            return "Pocket Camera";
+
+        case CartridgeType::BandaiTAMA5:
+            return "Bandai TAMA5";
+
+        case CartridgeType::HuC3:
+            return "HuC3";
+
+        case CartridgeType::HuC1RAMBattery:
+            return "HuC1 + RAM + Battery";
+    }
+
+    return "Unknown";
 }

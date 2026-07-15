@@ -7,6 +7,7 @@
 // strictly prohibited without the prior written consent of the author.
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include "Debug/MLMonitorBackend.h"
 #include "APU.h"
 #include "Cartridge.h"
@@ -39,6 +40,192 @@ void MLMonitorBackend::enterMonitor()
 {
     if (host)
         host->enterMonitor();
+}
+
+Cartridge::CartridgeInfo
+MLMonitorBackend::getCartridgeInfo() const
+{
+    if (cartridge == nullptr)
+        return Cartridge::CartridgeInfo{};
+
+    return cartridge->getCartridgeInfo();
+}
+
+void MLMonitorBackend::printCartridgeInfo() const
+{
+    if (cartridge == nullptr)
+    {
+        std::cout
+            << "Cartridge is not attached.\n";
+        return;
+    }
+
+    const Cartridge::CartridgeInfo info =
+        cartridge->getCartridgeInfo();
+
+    if (!info.loaded)
+    {
+        std::cout
+            << "No cartridge is currently loaded.\n";
+        return;
+    }
+
+    auto formatSize =
+        [](std::size_t bytes) -> std::string
+        {
+            std::ostringstream output;
+
+            if (bytes >= 1024 * 1024)
+            {
+                output
+                    << (bytes / (1024 * 1024))
+                    << " MB";
+            }
+            else if (bytes >= 1024)
+            {
+                output
+                    << (bytes / 1024)
+                    << " KB";
+            }
+            else
+            {
+                output
+                    << bytes
+                    << " bytes";
+            }
+
+            return output.str();
+        };
+
+    std::cout
+        << "Cartridge Information\n"
+        << "---------------------\n";
+
+    std::cout
+        << "Title:          "
+        << (info.title.empty()
+                ? "<untitled>"
+                : info.title)
+        << "\n";
+
+    std::cout
+        << "Type:           "
+        << info.cartridgeType
+        << " ($"
+        << std::hex
+        << std::uppercase
+        << std::setw(2)
+        << std::setfill('0')
+        << static_cast<unsigned int>(
+            info.cartridgeTypeCode)
+        << ")\n";
+
+    std::cout
+        << "Mapper:         "
+        << info.mapperType
+        << "\n";
+
+    std::cout
+        << std::dec
+        << std::nouppercase
+        << std::setfill(' ');
+
+    std::cout
+        << "ROM size:       "
+        << formatSize(info.romSizeBytes)
+        << "\n";
+
+    std::cout
+        << "ROM banks:      "
+        << info.romBankCount
+        << "\n";
+
+    std::cout
+        << "RAM size:       "
+        << formatSize(info.ramSizeBytes)
+        << "\n";
+
+    std::cout
+        << "RAM banks:      "
+        << info.ramBankCount
+        << "\n";
+
+    std::cout
+        << "Current ROM:    "
+        << info.selectedROMBank
+        << "\n";
+
+    std::cout
+        << "Current RAM:    "
+        << static_cast<unsigned int>(
+            info.selectedRAMBank)
+        << "\n";
+
+    std::cout
+        << "Banking mode:   "
+        << static_cast<unsigned int>(
+            info.bankingMode)
+        << "\n";
+
+    std::cout
+        << "RAM present:    "
+        << (info.hasRAM ? "Yes" : "No")
+        << "\n";
+
+    std::cout
+        << "RAM enabled:    "
+        << (info.ramEnabled ? "Yes" : "No")
+        << "\n";
+
+    std::cout
+        << "Battery:        "
+        << (info.hasBattery ? "Yes" : "No")
+        << "\n";
+
+    std::cout
+        << "Timer:          "
+        << (info.hasTimer ? "Yes" : "No")
+        << "\n";
+
+    std::cout
+        << "Rumble:         "
+        << (info.hasRumble ? "Yes" : "No")
+        << "\n";
+
+    std::cout
+        << "SGB support:    "
+        << (info.sgbFlag == 0x03
+                ? "Yes"
+                : "No")
+        << "\n";
+
+    std::cout
+        << "Destination:    "
+        << (info.destinationCode == 0x00
+                ? "Japan"
+                : "Non-Japan")
+        << "\n";
+
+    std::cout
+        << "ROM version:    "
+        << static_cast<unsigned int>(
+            info.maskROMVersion)
+        << "\n";
+
+    std::cout
+        << "Header checksum: $"
+        << std::hex
+        << std::uppercase
+        << std::setw(2)
+        << std::setfill('0')
+        << static_cast<unsigned int>(
+            info.headerChecksum)
+        << "\n";
+
+    std::cout
+        << std::dec
+        << std::nouppercase
+        << std::setfill(' ');
 }
 
 void MLMonitorBackend::printCPUCycles() const

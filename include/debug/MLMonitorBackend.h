@@ -10,11 +10,11 @@
 
 #include <cstdint>
 #include "Bus.h"
+#include "Cartridge.h"
 #include "CPU.h"
 #include "debug/lr35902/LR35902Disassembler.h"
 
 class APU;
-class Cartridge;
 class EmulationSession;
 class InputManager;
 class Memory;
@@ -42,6 +42,10 @@ class MLMonitorBackend
         // Bus
         inline uint8_t readRAM(uint16_t address) const { return bus->read(address); }
         inline void writeRAM(uint16_t address, uint8_t value) { bus->write(address, value); }
+
+        // Cartridge
+        Cartridge::CartridgeInfo getCartridgeInfo() const;
+        void printCartridgeInfo() const;
 
         // CPU
         inline CPU& getCPU() { return *cpu; }

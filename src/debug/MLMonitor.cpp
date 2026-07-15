@@ -8,6 +8,7 @@
 #include "debug/MLMonitor.h"
 #include "debug/AssembleCommand.h"
 #include "debug/BreakpointCommand.h"
+#include "debug/CartridgeCommand.h"
 #include "debug/CPUCommand.h"
 #include "debug/DisassembleCommand.h"
 #include "debug/GoCommand.h"
@@ -24,6 +25,7 @@ MLMonitor::MLMonitor() :
 {
     registerCommand(std::make_unique<AssembleCommand>());
     registerCommand(std::make_unique<BreakpointCommand>());
+    registerCommand(std::make_unique<CartridgeCommand>());
     registerCommand(std::make_unique<CPUCommand>());
     registerCommand(std::make_unique<DisassembleCommand>());
     registerCommand(std::make_unique<GoCommand>());
