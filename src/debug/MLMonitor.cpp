@@ -13,6 +13,7 @@
 #include "debug/GoCommand.h"
 #include "debug/MemoryDumpCommand.h"
 #include "debug/MemoryEditCommand.h"
+#include "debug/WatchCommand.h"
 
 MLMonitor::MLMonitor() :
     mlMonitorBackend(nullptr),
@@ -27,6 +28,7 @@ MLMonitor::MLMonitor() :
     registerCommand(std::make_unique<GoCommand>());
     registerCommand(std::make_unique<MemoryDumpCommand>());
     registerCommand(std::make_unique<MemoryEditCommand>());
+    registerCommand(std::make_unique<WatchCommand>());
 }
 
 MLMonitor::~MLMonitor()
