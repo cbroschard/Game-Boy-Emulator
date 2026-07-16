@@ -13,6 +13,7 @@ PPU::PPU() :
     bus(nullptr),
     frameReady(false),
     scanLineRendered(false),
+    vramBankSelect(0),
     stat(0x80),
     lcdc(0x91),
     scy(0),
@@ -39,11 +40,16 @@ PPU::~PPU()
 void PPU::reset()
 {
     oam.fill(0x00);
-    vram.fill(0x00);
+
+    for (auto& bank : vram)
+        bank.fill(0x00);
 
     framebuffer.fill(0);
 
     mode                = PPUMode::OAM;
+
+    vramBankSelect      = 0;
+
     stat                = 0x80 | static_cast<uint8_t>(mode);
 
     lcdc                = 0x91;
@@ -167,7 +173,8 @@ void PPU::saveState(StateWriter& wrtr) const
     // Version
     wrtr.writeU32(2);
 
-    wrtr.writeArrayU8(vram.data(), vram.size());
+    wrtr.writeArrayU8(vram[0].data(), vram[0].size());
+    wrtr.writeArrayU8(vram[1].data(), vram[1].size());
     wrtr.writeArrayU8(oam.data(), oam.size());
 
     wrtr.writeArrayU32(framebuffer.data(), framebuffer.size());
@@ -223,7 +230,13 @@ bool PPU::loadState(const StateReader::Chunk& chunk, StateReader& rdr)
         return false;
     }
 
-    if (!rdr.readArrayU8(vram.data(), vram.size()))
+    if (!rdr.readArrayU8(vram[0].data(), vram[0].size()))
+    {
+        rdr.exitChunkPayload(chunk);
+        return false;
+    }
+
+    if (!rdr.readArrayU8(vram[1].data(), vram[1].size()))
     {
         rdr.exitChunkPayload(chunk);
         return false;
@@ -361,6 +374,22 @@ bool PPU::loadState(const StateReader::Chunk& chunk, StateReader& rdr)
     rdr.exitChunkPayload(chunk);
 
     return true;
+}
+
+uint8_t PPU::readVRAM(uint16_t offset) const
+{
+    if (offset >= 0x2000)
+        return 0xFF;
+
+    return vram[vramBankSelect & 0x01][offset];
+}
+
+void PPU::writeVRAM(uint16_t offset, uint8_t value)
+{
+    if (offset >= 0x2000)
+        return;
+
+    vram[vramBankSelect & 0x01][offset] = value;
 }
 
 uint8_t PPU::readRegister(uint16_t address) const
@@ -669,7 +698,7 @@ uint8_t PPU::fetchBGPixel(int x, int y)
     uint16_t tileMapOffset =
         tileMapBase + tileY * 32 + tileX;
 
-    uint8_t tileNumber = vram[tileMapOffset];
+    uint8_t tileNumber = vram[vramBankSelect][tileMapOffset];
 
     uint16_t tileDataOffset;
 
@@ -691,8 +720,8 @@ uint8_t PPU::fetchBGPixel(int x, int y)
     uint16_t rowOffset =
         tileDataOffset + pixelY * 2;
 
-    uint8_t lo = vram[rowOffset];
-    uint8_t hi = vram[rowOffset + 1];
+    uint8_t lo = vram[vramBankSelect][rowOffset];
+    uint8_t hi = vram[vramBankSelect][rowOffset + 1];
 
     uint8_t bit = 7 - pixelX;
 
@@ -753,8 +782,8 @@ void PPU::drawSpriteLine(
     uint16_t rowOffset =
         tileOffset + row * 2;
 
-    uint8_t lo = vram[rowOffset];
-    uint8_t hi = vram[rowOffset + 1];
+    uint8_t lo = vram[vramBankSelect][rowOffset];
+    uint8_t hi = vram[vramBankSelect][rowOffset + 1];
 
     for (int pixel = 0; pixel < 8; pixel++)
     {
@@ -821,7 +850,7 @@ uint8_t PPU::fetchWindowPixel(int x)
         static_cast<uint16_t>(tileRow * 32 + tileCol);
 
     const uint8_t tileNumber =
-        vram[tileMapBase + mapIndex];
+        vram[vramBankSelect][tileMapBase + mapIndex];
 
     uint16_t tileDataAddress;
 
@@ -844,10 +873,10 @@ uint8_t PPU::fetchWindowPixel(int x)
         tileDataAddress + static_cast<uint16_t>(pixelY * 2);
 
     const uint8_t lowByte =
-        vram[rowAddress];
+        vram[vramBankSelect][rowAddress];
 
     const uint8_t highByte =
-        vram[rowAddress + 1];
+        vram[vramBankSelect][rowAddress + 1];
 
     const int bit = 7 - pixelX;
 

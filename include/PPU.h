@@ -36,8 +36,8 @@ class PPU
         inline uint8_t readOAM(uint16_t offset) const { return oam[offset]; }
         inline void writeOAM(uint16_t offset, uint8_t value) { oam[offset] = value; }
 
-        inline uint8_t readVRAM(uint16_t offset) const { return vram[offset]; }
-        inline void writeVRAM(uint16_t offset, uint8_t value) { vram[offset] = value; }
+        uint8_t readVRAM(uint16_t offset) const;
+        void writeVRAM(uint16_t offset, uint8_t value);
 
         uint8_t readRegister(uint16_t address) const;
         void writeRegister(uint16_t address, uint8_t value);
@@ -52,7 +52,7 @@ class PPU
     private:
         Bus* bus;
 
-        std::array<uint8_t, 0x2000> vram{}; // 8 KB, $8000-$9FFF
+        std::array<std::array<uint8_t, 0x2000>, 2> vram{};// 2 8K banks VRAM
         std::array<uint8_t, 0xA0>   oam{};  // 160 bytes, $FE00-$FE9F
 
         std::array<uint32_t, 160 * 144> framebuffer;
@@ -78,6 +78,8 @@ class PPU
 
         bool frameReady;
         bool scanLineRendered;
+
+        uint8_t vramBankSelect;
 
         uint8_t stat;
         uint8_t lcdc;
