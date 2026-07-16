@@ -3,11 +3,11 @@
 
 #include <cstdint>
 
-enumb class HardwareMode : uint8_t
+enum class HardwareMode : uint8_t
 {
     DMG,
     CGB
-}
+};
 
 enum class CartridgeColorSupport : uint8_t
 {
