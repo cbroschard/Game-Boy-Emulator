@@ -315,6 +315,24 @@ void Cartridge::writeRAM(uint16_t offset, uint8_t value)
     cartridgeRAM[effectiveRAMOffset] = value;
 }
 
+CartridgeColorSupport Cartridge::getColorSupport() const
+{
+    if (cartridgeROM.empty())
+        return CartridgeColorSupport::DMGOnly;
+
+    switch (cartridgeHeader.cgbFlag)
+    {
+        case 0x80:
+            return CartridgeColorSupport::CGBCompatible;
+
+        case 0xC0:
+            return CartridgeColorSupport::CGBOnly;
+
+        default:
+            return CartridgeColorSupport::DMGOnly;
+    }
+}
+
 Cartridge::CartridgeInfo Cartridge::getCartridgeInfo() const
 {
     CartridgeInfo info;
@@ -336,6 +354,12 @@ Cartridge::CartridgeInfo Cartridge::getCartridgeInfo() const
 
     info.ramSizeCode =
         cartridgeHeader.ramSizeCode;
+
+    info.cgbFlag =
+        cartridgeHeader.cgbFlag;
+
+    info.colorSupport =
+        getColorSupport();
 
     info.romSizeBytes =
         cartridgeROM.size();

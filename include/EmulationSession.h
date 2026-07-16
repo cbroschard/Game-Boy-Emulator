@@ -14,6 +14,7 @@
 #include "AudioOutput.h"
 #include "Bus.h"
 #include "Cartridge.h"
+#include "common/HardwareMode.h"
 #include "CPU.h"
 #include "EmulatorUI.h"
 #include "imgui/imgui_impl_sdl3.h"
@@ -41,7 +42,7 @@ class EmulationSession
         void run();
 
         inline void setDMGBIOSPath(const std::string& path) { dmgBIOSPath = path; }
-        inline void setGBCBIOSPath(const std::string& path) { gbcBIOSPath = path; }
+        inline void setCGBBIOSPath(const std::string& path) { cgbBIOSPath = path; }
         inline void setCartridgePath(const std::string &path) { cartridgePath = path; }
 
         inline bool loadCartridge(const std::string& path) { return cartridge.loadCartridge(path); }
@@ -69,6 +70,8 @@ class EmulationSession
         Timer timer;
         VideoOutput videoOutput;
 
+        HardwareMode hardwareMode;
+
         std::atomic<bool> uiPaused;
         std::atomic<bool> running;
 
@@ -83,7 +86,7 @@ class EmulationSession
         UIBridge uiBridge;
 
         std::string dmgBIOSPath;
-        std::string gbcBIOSPath;
+        std::string cgbBIOSPath;
         std::string cartridgePath;
 
         void wireUp();

@@ -58,7 +58,7 @@ int main()
         }
 
         session.setDMGBIOSPath(vmConfig["DMG_BIOS"].as<std::string>());
-        session.setGBCBIOSPath(vmConfig["GBC_BIOS"].as<std::string>());
+        session.setCGBBIOSPath(vmConfig["GBC_BIOS"].as<std::string>());
         session.setCartridgePath(vmConfig["Cartridge"].as<std::string>());
         session.run();
 

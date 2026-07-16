@@ -11,6 +11,7 @@
 #include "EmulationSession.h"
 
 EmulationSession::EmulationSession() :
+    hardwareMode(HardwareMode::DMG),
     uiPaused(false),
     running(true),
     pendingSaveState(false),
@@ -37,10 +38,7 @@ EmulationSession::EmulationSession() :
     validateWiring();
 }
 
-EmulationSession::~EmulationSession()
-{
-
-}
+EmulationSession::~EmulationSession() = default;
 
 void EmulationSession::reset()
 {
@@ -57,16 +55,32 @@ void EmulationSession::reset()
 void EmulationSession::run()
 {
     if (dmgBIOSPath.empty())
-        throw std::runtime_error("BIOS path has not been set.");
+        throw std::runtime_error("DMG BIOS path has not been set.");
+
+    if (cgbBIOSPath.empty())
+        throw std::runtime_error{"CGB BIOS path has not been set."};
 
     if (cartridgePath.empty())
         throw std::runtime_error("Cartridge path has not been set.");
 
-    if (!loadBIOS(dmgBIOSPath))
-        throw std::runtime_error("Failed to load DMG BIOS: " + dmgBIOSPath);
-
     if (!loadCartridge(cartridgePath))
         throw std::runtime_error("Failed to load Cartridge: " + cartridgePath);
+
+    hardwareMode =
+    supportsCGB(cartridge.getColorSupport())
+        ? HardwareMode::CGB
+        : HardwareMode::DMG;
+
+    if (hardwareMode == HardwareMode::DMG)
+    {
+        if (!loadBIOS(dmgBIOSPath))
+            throw std::runtime_error("Failed to load DMG BIOS: " + dmgBIOSPath);
+    }
+    else
+    {
+        if (!loadBIOS(cgbBIOSPath))
+            throw std::runtime_error("Failed to load CGB BIOS: " + cgbBIOSPath);
+    }
 
     reset();
 

@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "common/HardwareMode.h"
 #include "StateReader.h"
 #include "StateWriter.h"
 
@@ -32,6 +33,9 @@ class Cartridge
             uint8_t cartridgeTypeCode = 0;
             uint8_t romSizeCode = 0;
             uint8_t ramSizeCode = 0;
+
+            uint8_t cgbFlag = 0;
+            CartridgeColorSupport colorSupport = CartridgeColorSupport::DMGOnly;
 
             std::size_t romSizeBytes = 0;
             std::size_t ramSizeBytes = 0;
@@ -68,6 +72,8 @@ class Cartridge
         uint8_t readRAM(uint16_t offset);
         void writeRAM(uint16_t offset, uint8_t value);
 
+        inline uint8_t getCGBFlag() const { return cartridgeHeader.cgbFlag; }
+        CartridgeColorSupport getColorSupport() const;
         CartridgeInfo getCartridgeInfo() const;
 
     protected:
@@ -87,7 +93,8 @@ class Cartridge
         {
             uint8_t entryPoint[4];       // $0100-$0103
             uint8_t nintendoLogo[48];    // $0104-$0133
-            char title[16];              // $0134-$0143
+            char title[15];              // $0134-$0142
+            uint8_t cgbFlag;             // $0143
 
             uint16_t newLicenseeCode;    // $0144-$0145
             uint8_t sgbFlag;             // $0146
