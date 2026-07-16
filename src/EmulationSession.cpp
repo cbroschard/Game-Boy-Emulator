@@ -71,6 +71,8 @@ void EmulationSession::run()
         ? HardwareMode::CGB
         : HardwareMode::DMG;
 
+    ppu.setHardwareMode(hardwareMode);
+
     if (hardwareMode == HardwareMode::DMG)
     {
         if (!loadBIOS(dmgBIOSPath))
