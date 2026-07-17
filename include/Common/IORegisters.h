@@ -22,6 +22,9 @@ namespace IORegisters
         constexpr uint16_t NR12 = 0xFF12;
         constexpr uint16_t NR13 = 0xFF13;
         constexpr uint16_t NR14 = 0xFF14;
+        constexpr uint16_t NR15 = 0xFF15;
+
+        constexpr uint16_t NR1F = 0xFF1F;
 
         constexpr uint16_t NR21 = 0xFF16;
         constexpr uint16_t NR22 = 0xFF17;
