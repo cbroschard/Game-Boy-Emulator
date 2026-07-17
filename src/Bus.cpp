@@ -8,8 +8,10 @@
 #include "APU.h"
 #include "Bus.h"
 #include "Cartridge.h"
+#include "common/IORegisters.h"
 #include "Joypad.h"
 #include "Memory.h"
+#include "common/MemoryMap.h"
 #include "MLMonitor.h"
 #include "PPU.h"
 #include "Timer.h"
@@ -83,10 +85,10 @@ uint8_t Bus::readInternal(uint16_t address)
     if (!memory)
         return 0xFF;
 
-    if (memory->isBootRomEnabled() && address <= 0x00FF)
+    if (memory->isBootRomEnabled() && address >= MemoryMap::BOOT_ROM_START && address <= MemoryMap::BOOT_ROM_END)
         return memory->readBootROM(address);
 
-    if (address >= ROM_FIXED_START && address <= ROM_SWITCHABLE_END)
+    if (address >= MemoryMap::ROM_FIXED_START && address <= MemoryMap::ROM_SWITCHABLE_END)
     {
         if (cartridge)
             return cartridge->readROM(address);
@@ -94,36 +96,36 @@ uint8_t Bus::readInternal(uint16_t address)
         return 0xFF;
     }
 
-    if (address >= VRAM_START && address <= VRAM_END)
-        return ppu ? ppu->readVRAM(address - VRAM_START) : 0xFF;
+    if (address >= MemoryMap::VRAM_START && address <= MemoryMap::VRAM_END)
+        return ppu ? ppu->readVRAM(address - MemoryMap::VRAM_START) : 0xFF;
 
-    if (address >= EXTERNAL_RAM_START && address <= EXTERNAL_RAM_END)
+    if (address >= MemoryMap::EXTERNAL_RAM_START && address <= MemoryMap::EXTERNAL_RAM_END)
     {
         if (cartridge)
-            return cartridge->readRAM(address - EXTERNAL_RAM_START);
+            return cartridge->readRAM(address - MemoryMap::EXTERNAL_RAM_START);
 
         return 0xFF;
     }
 
-    if (address >= WRAM_START && address <= WRAM_END)
-        return memory->readWRAM(address - WRAM_START);
+    if (address >= MemoryMap::WRAM_START && address <= MemoryMap::WRAM_END)
+        return memory->readWRAM(address - MemoryMap::WRAM_START);
 
-    if (address >= ECHO_RAM_START && address <= ECHO_RAM_END)
-        return memory->readWRAM(address - ECHO_RAM_START);
+    if (address >= MemoryMap::ECHO_RAM_START && address <= MemoryMap::ECHO_RAM_END)
+        return memory->readWRAM(address - MemoryMap::ECHO_RAM_START);
 
-    if (address >= OAM_START && address <= OAM_END)
-        return ppu ? ppu->readOAM(address - OAM_START) : 0xFF;
+    if (address >= MemoryMap::OAM_START && address <= MemoryMap::OAM_END)
+        return ppu ? ppu->readOAM(address - MemoryMap::OAM_START) : 0xFF;
 
-    if (address >= UNUSABLE_START && address <= UNUSABLE_END)
+    if (address >= MemoryMap::UNUSABLE_START && address <= MemoryMap::UNUSABLE_END)
         return 0xFF;
 
-    if (address >= IO_START && address <= IO_END)
+    if (address >= MemoryMap::IO_START && address <= MemoryMap::IO_END)
         return readIO(address);
 
-    if (address >= HRAM_START && address <= HRAM_END)
-        return memory->readHRAM(address - HRAM_START);
+    if (address >= MemoryMap::HRAM_START && address <= MemoryMap::HRAM_END)
+        return memory->readHRAM(address - MemoryMap::HRAM_START);
 
-    if (address == IE_REGISTER)
+    if (address == IORegisters::Interrupt::IE)
         return memory->readIE();
 
     return 0xFF;
@@ -145,7 +147,7 @@ void Bus::writeInternal(uint16_t address, uint8_t value)
     if (!memory)
         return;
 
-    if (address >= ROM_FIXED_START && address <= ROM_SWITCHABLE_END)
+    if (address >= MemoryMap::ROM_FIXED_START && address <= MemoryMap::ROM_SWITCHABLE_END)
     {
         if (cartridge)
             cartridge->writeROM(address, value); // MBC control write
@@ -153,58 +155,58 @@ void Bus::writeInternal(uint16_t address, uint8_t value)
         return;
     }
 
-    if (address >= EXTERNAL_RAM_START && address <= EXTERNAL_RAM_END)
+    if (address >= MemoryMap::EXTERNAL_RAM_START && address <= MemoryMap::EXTERNAL_RAM_END)
     {
         if (cartridge)
-            cartridge->writeRAM(address - EXTERNAL_RAM_START, value);
+            cartridge->writeRAM(address - MemoryMap::EXTERNAL_RAM_START, value);
 
         return;
     }
 
-    if (address >= VRAM_START && address <= VRAM_END)
+    if (address >= MemoryMap::VRAM_START && address <= MemoryMap::VRAM_END)
     {
         if (ppu)
-            ppu->writeVRAM(address - VRAM_START, value);
+            ppu->writeVRAM(address - MemoryMap::VRAM_START, value);
 
         return;
     }
 
-    if (address >= WRAM_START && address <= WRAM_END)
+    if (address >= MemoryMap::WRAM_START && address <= MemoryMap::WRAM_END)
     {
-        memory->writeWRAM(address - WRAM_START, value);
+        memory->writeWRAM(address - MemoryMap::WRAM_START, value);
         return;
     }
 
-    if (address >= ECHO_RAM_START && address <= ECHO_RAM_END)
+    if (address >= MemoryMap::ECHO_RAM_START && address <= MemoryMap::ECHO_RAM_END)
     {
-        memory->writeWRAM(address - ECHO_RAM_START, value);
+        memory->writeWRAM(address - MemoryMap::ECHO_RAM_START, value);
         return;
     }
 
-    if (address >= OAM_START && address <= OAM_END)
+    if (address >= MemoryMap::OAM_START && address <= MemoryMap::OAM_END)
     {
         if (ppu)
-            ppu->writeOAM(address - OAM_START, value);
+            ppu->writeOAM(address - MemoryMap::OAM_START, value);
 
         return;
     }
 
-    if (address >= UNUSABLE_START && address <= UNUSABLE_END)
+    if (address >= MemoryMap::UNUSABLE_START && address <= MemoryMap::UNUSABLE_END)
         return;
 
-    if (address >= IO_START && address <= IO_END)
+    if (address >= MemoryMap::IO_START && address <= MemoryMap::IO_END)
     {
         writeIO(address, value);
         return;
     }
 
-    if (address >= HRAM_START && address <= HRAM_END)
+    if (address >= MemoryMap::HRAM_START && address <= MemoryMap::HRAM_END)
     {
-        memory->writeHRAM(address - HRAM_START, value);
+        memory->writeHRAM(address - MemoryMap::HRAM_START, value);
         return;
     }
 
-    if (address == IE_REGISTER)
+    if (address == IORegisters::Interrupt::IE)
     {
         memory->writeIE(value);
         return;
@@ -213,90 +215,109 @@ void Bus::writeInternal(uint16_t address, uint8_t value)
 
 uint8_t Bus::readIO(uint16_t address)
 {
-    if (address >= APU_REGISTER_START && address <= APU_REGISTER_END)
+    if (address >= IORegisters::APU::Start && address <= IORegisters::APU::End)
         return apu ? apu->readRegister(address) : 0xFF;
 
     switch (address)
     {
-        case JOYPAD_REGISTER:
+        case IORegisters::Joypad::JOYP:
             return joypad ? joypad->read() : 0xFF;
 
-        case DIV_REGISTER:
-        case TIMA_REGISTER:
-        case TMA_REGISTER:
-        case TAC_REGISTER:
+        case IORegisters::Timer::DIV:
+        case IORegisters::Timer::TIMA:
+        case IORegisters::Timer::TMA:
+        case IORegisters::Timer::TAC:
             return timer ? timer->readRegister(address) : 0xFF;
 
-        case LCDC_REGISTER:
-        case STAT_REGISTER:
-        case SCY_REGISTER:
-        case SCX_REGISTER:
-        case LY_REGISTER:
-        case LYC_REGISTER:
-        case BGP_REGISTER:
-        case OBP0_REGISTER:
-        case OBP1_REGISTER:
-        case WY_REGISTER:
-        case WX_REGISTER:
+        case IORegisters::PPU::LCDC:
+        case IORegisters::PPU::STAT:
+        case IORegisters::PPU::SCY:
+        case IORegisters::PPU::SCX:
+        case IORegisters::PPU::LY:
+        case IORegisters::PPU::LYC:
+        case IORegisters::PPU::BGP:
+        case IORegisters::PPU::OBP0:
+        case IORegisters::PPU::OBP1:
+        case IORegisters::PPU::WY:
+        case IORegisters::PPU::WX:
+        case IORegisters::PPU::VBK:
+        case IORegisters::PPU::BGPI:
+        case IORegisters::PPU::BGPD:
+        case IORegisters::PPU::OBPI:
+        case IORegisters::PPU::OBPD:
+        case IORegisters::PPU::OPRI:
             return ppu ? ppu->readRegister(address) : 0xFF;
 
-        case IF_REGISTER:
+        case IORegisters::PPU::DMA:
+            return memory->readIO(address - MemoryMap::IO_START);
+
+        case IORegisters::Interrupt::IF:
             return interruptStatus | 0xE0;
 
         default:
-            return memory->readIO(address - IO_START);
+            return memory->readIO(address - MemoryMap::IO_START);
     }
 }
 
 void Bus::writeIO(uint16_t address, uint8_t value)
 {
-    if (address >= APU_REGISTER_START && address <= APU_REGISTER_END)
+    if (address >= IORegisters::APU::Start && address <= IORegisters::APU::End)
     {
         if (apu)
             apu->writeRegister(address, value);
 
-        memory->writeIO(address - IO_START, value);
+        memory->writeIO(address - MemoryMap::IO_START, value);
         return;
     }
 
     switch (address)
     {
-        case DIV_REGISTER:
-        case TIMA_REGISTER:
-        case TMA_REGISTER:
-        case TAC_REGISTER:
+        case IORegisters::Timer::DIV:
+        case IORegisters::Timer::TIMA:
+        case IORegisters::Timer::TMA:
+        case IORegisters::Timer::TAC:
         {
             if (timer)
                 timer->writeRegister(address, value);
+
             return;
         }
 
-        case LCDC_REGISTER:
-        case STAT_REGISTER:
-        case SCY_REGISTER:
-        case SCX_REGISTER:
-        case LY_REGISTER:
-        case LYC_REGISTER:
-        case BGP_REGISTER:
-        case OBP0_REGISTER:
-        case OBP1_REGISTER:
-        case WY_REGISTER:
-        case WX_REGISTER:
+        case IORegisters::PPU::LCDC:
+        case IORegisters::PPU::STAT:
+        case IORegisters::PPU::SCY:
+        case IORegisters::PPU::SCX:
+        case IORegisters::PPU::LY:
+        case IORegisters::PPU::LYC:
+        case IORegisters::PPU::BGP:
+        case IORegisters::PPU::OBP0:
+        case IORegisters::PPU::OBP1:
+        case IORegisters::PPU::WY:
+        case IORegisters::PPU::WX:
+        case IORegisters::PPU::VBK:
+        case IORegisters::PPU::BGPI:
+        case IORegisters::PPU::BGPD:
+        case IORegisters::PPU::OBPI:
+        case IORegisters::PPU::OBPD:
+        case IORegisters::PPU::OPRI:
         {
             if (ppu)
                 ppu->writeRegister(address, value);
+
             return;
         }
 
-        case DMA_REGISTER:
+        case IORegisters::PPU::DMA:
         {
-            memory->writeIO(address - IO_START, value);
+            memory->writeIO(address - MemoryMap::IO_START, value);
 
-            const uint16_t source = static_cast<uint16_t>(value) << 8;
+            const uint16_t source =
+                static_cast<uint16_t>(value) << 8;
 
             for (uint16_t i = 0; i < 0xA0; i++)
             {
-                const uint8_t byte = readInternal(source + i);
+                const uint8_t byte =
+                    readInternal(static_cast<uint16_t>(source + i));
 
                 if (ppu)
                     ppu->writeOAM(i, byte);
@@ -305,12 +326,18 @@ void Bus::writeIO(uint16_t address, uint8_t value)
             return;
         }
 
-        case IF_REGISTER:
+        case IORegisters::Interrupt::IF:
+        {
             interruptStatus = value | 0xE0;
-            memory->writeIO(address - IO_START, interruptStatus);
-            return;
+            memory->writeIO(
+                address - MemoryMap::IO_START,
+                interruptStatus
+            );
 
-        case JOYPAD_REGISTER:
+            return;
+        }
+
+        case IORegisters::Joypad::JOYP:
         {
             if (joypad)
                 joypad->write(value);
@@ -318,16 +345,18 @@ void Bus::writeIO(uint16_t address, uint8_t value)
             return;
         }
 
-        case 0xFF50:
-            memory->writeIO(address - IO_START, value);
+        case IORegisters::Boot::Disable:
+        {
+            memory->writeIO(address - MemoryMap::IO_START, value);
 
             if (value != 0)
                 memory->disableBootRom();
 
             return;
+        }
 
         default:
-            memory->writeIO(address - IO_START, value);
+            memory->writeIO(address - MemoryMap::IO_START, value);
             return;
     }
 }
