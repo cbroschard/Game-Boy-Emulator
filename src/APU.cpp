@@ -7,6 +7,7 @@
 // strictly prohibited without the prior written consent of the author.
 #include "APU.h"
 #include "AudioOutput.h"
+#include "common/IORegisters.h"
 
 APU::APU() :
     audioOutput(nullptr),
@@ -307,37 +308,82 @@ uint8_t APU::readRegister(uint16_t address) const
 {
     switch (address)
     {
-        case 0xFF10: return registers.nr10;
-        case 0xFF11: return registers.nr11;
-        case 0xFF12: return registers.nr12;
-        case 0xFF13: return registers.nr13;
-        case 0xFF14: return registers.nr14;
+        // Channel 1
+        case IORegisters::APU::NR10:
+            return registers.nr10;
 
-        case 0xFF15: return 0xFF;
+        case IORegisters::APU::NR11:
+            return registers.nr11;
 
-        case 0xFF16: return registers.nr21;
-        case 0xFF17: return registers.nr22;
-        case 0xFF18: return registers.nr23;
-        case 0xFF19: return registers.nr24;
+        case IORegisters::APU::NR12:
+            return registers.nr12;
 
-        case 0xFF1A: return registers.nr30;
-        case 0xFF1B: return registers.nr31;
-        case 0xFF1C: return registers.nr32;
-        case 0xFF1D: return registers.nr33;
-        case 0xFF1E: return registers.nr34;
+        case IORegisters::APU::NR13:
+            return registers.nr13;
 
-        case 0xFF1F: return 0xFF;
+        case IORegisters::APU::NR14:
+            return registers.nr14;
 
-        case 0xFF20: return registers.nr41;
-        case 0xFF21: return registers.nr42;
-        case 0xFF22: return registers.nr43;
-        case 0xFF23: return registers.nr44;
+        // Unused
+        case IORegisters::APU::NR15:
+            return 0xFF;
 
-        case 0xFF24: return registers.nr50;
-        case 0xFF25: return registers.nr51;
-        case 0xFF26:
+        // Channel 2
+        case IORegisters::APU::NR21:
+            return registers.nr21;
+
+        case IORegisters::APU::NR22:
+            return registers.nr22;
+
+        case IORegisters::APU::NR23:
+            return registers.nr23;
+
+        case IORegisters::APU::NR24:
+            return registers.nr24;
+
+        // Channel 3
+        case IORegisters::APU::NR30:
+            return registers.nr30;
+
+        case IORegisters::APU::NR31:
+            return registers.nr31;
+
+        case IORegisters::APU::NR32:
+            return registers.nr32;
+
+        case IORegisters::APU::NR33:
+            return registers.nr33;
+
+        case IORegisters::APU::NR34:
+            return registers.nr34;
+
+        // Unused
+        case IORegisters::APU::NR1F:
+            return 0xFF;
+
+        // Channel 4
+        case IORegisters::APU::NR41:
+            return registers.nr41;
+
+        case IORegisters::APU::NR42:
+            return registers.nr42;
+
+        case IORegisters::APU::NR43:
+            return registers.nr43;
+
+        case IORegisters::APU::NR44:
+            return registers.nr44;
+
+        // Master sound control
+        case IORegisters::APU::NR50:
+            return registers.nr50;
+
+        case IORegisters::APU::NR51:
+            return registers.nr51;
+
+        case IORegisters::APU::NR52:
         {
-            uint8_t value = 0;
+            uint8_t value = 0x70;
 
             if (apuEnabled)
                 value |= 0x80;
@@ -358,10 +404,17 @@ uint8_t APU::readRegister(uint16_t address) const
         }
 
         default:
-            if (address >= 0xFF30 && address <= 0xFF3F)
-                return registers.waveRAM[address - 0xFF30];
+        {
+            if (address >= IORegisters::APU::WaveRAMStart &&
+                address <= IORegisters::APU::WaveRAMEnd)
+            {
+                return registers.waveRAM[
+                    address - IORegisters::APU::WaveRAMStart
+                ];
+            }
 
             return 0xFF;
+        }
     }
 }
 
@@ -372,13 +425,13 @@ void APU::writeRegister(uint16_t address, uint8_t value)
 
     switch (address)
     {
-        case 0xFF10:
+        case IORegisters::APU::NR10:
         {
             registers.nr10 = value;
             return;
         }
 
-        case 0xFF11:
+        case IORegisters::APU::NR11:
         {
             registers.nr11 = value;
 
@@ -388,7 +441,7 @@ void APU::writeRegister(uint16_t address, uint8_t value)
             return;
         }
 
-        case 0xFF12:
+        case IORegisters::APU::NR12:
         {
             registers.nr12 = value;
             if (value & 0xF8)
