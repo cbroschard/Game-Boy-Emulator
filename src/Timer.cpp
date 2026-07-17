@@ -6,6 +6,7 @@
 // of this code in whole or in part for any other purpose is
 // strictly prohibited without the prior written consent of the author.
 #include "Bus.h"
+#include "common/IORegisters.h"
 #include "Timer.h"
 
 Timer::Timer() :
@@ -115,13 +116,13 @@ uint8_t Timer::readRegister(uint16_t address) const
 {
     switch (address)
     {
-        case 0xFF04:
+        case IORegisters::Timer::DIV:
             return div;
-        case 0xFF05:
+        case IORegisters::Timer::TIMA:
             return timA;
-        case 0xFF06:
+        case IORegisters::Timer::TMA:
             return tma;
-        case 0xFF07:
+        case IORegisters::Timer::TAC:
             return tac | 0xF8;
         default:
             return 0xFF;
@@ -132,26 +133,26 @@ void Timer::writeRegister(uint16_t address, uint8_t value)
 {
     switch (address)
     {
-        case 0xFF04:
+        case IORegisters::Timer::DIV:
         {
             div = 0;
             divCounter = 0;
             return;
         }
 
-        case 0xFF05:
+        case IORegisters::Timer::TIMA:
         {
             timA = value;
             return;
         }
 
-        case 0xFF06:
+        case IORegisters::Timer::TMA:
         {
             tma = value;
             return;
         }
 
-        case 0xFF07:
+        case IORegisters::Timer::TAC:
         {
             tac = value & 0x07;
             return;
