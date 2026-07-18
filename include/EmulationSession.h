@@ -89,6 +89,8 @@ class EmulationSession
         std::string cgbBIOSPath;
         std::string cartridgePath;
 
+        std::string persistencePath;
+
         void wireUp();
         void validateWiring() const;
 

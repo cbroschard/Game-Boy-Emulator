@@ -55,6 +55,7 @@ void EmulationSession::reset()
 void EmulationSession::run()
 {
     if (dmgBIOSPath.empty())
+
         throw std::runtime_error("DMG BIOS path has not been set.");
 
     if (cgbBIOSPath.empty())
@@ -66,11 +67,27 @@ void EmulationSession::run()
     if (!loadCartridge(cartridgePath))
         throw std::runtime_error("Failed to load Cartridge: " + cartridgePath);
 
-    hardwareMode =
-    supportsCGB(cartridge.getColorSupport())
-        ? HardwareMode::CGB
-        : HardwareMode::DMG;
+    persistencePath.clear();
 
+    if (cartridge.cartridgeHasBattery())
+    {
+        persistencePath = cartridge.makePersistencePath(cartridgePath);
+
+        if (!cartridge.loadBatterySave(persistencePath))
+        {
+            throw std::runtime_error(
+                "Failed to load cartridge persistence file: " +
+                persistencePath
+            );
+        }
+
+        std::cout
+            << "Cartridge persistence path: "
+            << persistencePath
+            << "\n";
+    }
+
+    hardwareMode = supportsCGB(cartridge.getColorSupport()) ? HardwareMode::CGB : HardwareMode::DMG;
 
     // Notify subsystems of the hardware mode
     ppu.setHardwareMode(hardwareMode);
@@ -244,6 +261,24 @@ void EmulationSession::run()
         else
         {
             nextFrameTime = now;
+        }
+    }
+
+    if (cartridge.cartridgeHasBattery() && !persistencePath.empty())
+    {
+        if (!cartridge.saveBatterySave(persistencePath))
+        {
+            std::cerr
+                << "Failed to save cartridge persistence file: "
+                << persistencePath
+                << "\n";
+        }
+        else
+        {
+            std::cout
+                << "Cartridge persistence saved: "
+                << persistencePath
+                << "\n";
         }
     }
 }

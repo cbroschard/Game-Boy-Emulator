@@ -346,31 +346,21 @@ Cartridge::CartridgeInfo Cartridge::getCartridgeInfo() const
     info.cartridgeType = getCartridgeTypeName();
     info.mapperType = getMapperTypeName();
 
-    info.cartridgeTypeCode =
-        cartridgeHeader.cartridgeType;
+    info.cartridgeTypeCode = cartridgeHeader.cartridgeType;
 
-    info.romSizeCode =
-        cartridgeHeader.romSizeCode;
+    info.romSizeCode = cartridgeHeader.romSizeCode;
 
-    info.ramSizeCode =
-        cartridgeHeader.ramSizeCode;
+    info.ramSizeCode = cartridgeHeader.ramSizeCode;
 
-    info.cgbFlag =
-        cartridgeHeader.cgbFlag;
+    info.cgbFlag = cartridgeHeader.cgbFlag;
 
-    info.colorSupport =
-        getColorSupport();
+    info.colorSupport = getColorSupport();
 
-    info.romSizeBytes =
-        cartridgeROM.size();
+    info.romSizeBytes = cartridgeROM.size();
 
-    info.ramSizeBytes =
-        cartridgeRAM.size();
+    info.ramSizeBytes = cartridgeRAM.size();
 
-    info.romBankCount =
-        cartridgeROM.empty()
-            ? 0
-            : cartridgeROM.size() / 0x4000;
+    info.romBankCount = cartridgeROM.empty() ? 0 : cartridgeROM.size() / 0x4000;
 
     if (cartridgeRAM.empty())
     {
@@ -392,26 +382,19 @@ Cartridge::CartridgeInfo Cartridge::getCartridgeInfo() const
     info.hasTimer = hasTimer;
     info.hasRumble = hasRumble;
 
-    info.selectedROMBank =
-        selectedROMBank;
+    info.selectedROMBank = selectedROMBank;
 
-    info.selectedRAMBank =
-        selectedRAMBank;
+    info.selectedRAMBank = selectedRAMBank;
 
-    info.bankingMode =
-        bankingMode;
+    info.bankingMode = bankingMode;
 
-    info.sgbFlag =
-        cartridgeHeader.sgbFlag;
+    info.sgbFlag = cartridgeHeader.sgbFlag;
 
-    info.destinationCode =
-        cartridgeHeader.destinationCode;
+    info.destinationCode = cartridgeHeader.destinationCode;
 
-    info.maskROMVersion =
-        cartridgeHeader.maskROMVersion;
+    info.maskROMVersion = cartridgeHeader.maskROMVersion;
 
-    info.headerChecksum =
-        cartridgeHeader.headerChecksum;
+    info.headerChecksum = cartridgeHeader.headerChecksum;
 
     return info;
 }
@@ -794,4 +777,44 @@ std::string Cartridge::getCartridgeTypeName() const
     }
 
     return "Unknown";
+}
+
+bool Cartridge::loadBatterySave(const std::filesystem::path& path)
+{
+    std::ifstream file(path, std::ios::binary);
+
+    if (!file)
+        return true; // No save yet; start with blank RAM.
+
+    file.read(
+        reinterpret_cast<char*>(cartridgeRAM.data()),
+        static_cast<std::streamsize>(cartridgeRAM.size())
+    );
+
+    return file.good() || file.eof();
+}
+
+bool Cartridge::saveBatterySave(const std::filesystem::path& path) const
+{
+    std::ofstream file(
+        path,
+        std::ios::binary | std::ios::trunc
+    );
+
+    if (!file)
+        return false;
+
+    file.write(
+        reinterpret_cast<const char*>(cartridgeRAM.data()),
+        static_cast<std::streamsize>(cartridgeRAM.size())
+    );
+
+    return file.good();
+}
+
+std::string Cartridge::makePersistencePath(const std::string& romPath) const
+{
+    std::filesystem::path p(romPath);
+    p.replace_extension(".cartpersist");
+    return p.string();
 }

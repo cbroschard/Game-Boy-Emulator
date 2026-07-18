@@ -10,6 +10,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <vector>
 #include "common/HardwareMode.h"
@@ -75,6 +76,12 @@ class Cartridge
         inline uint8_t getCGBFlag() const { return cartridgeHeader.cgbFlag; }
         CartridgeColorSupport getColorSupport() const;
         CartridgeInfo getCartridgeInfo() const;
+
+        // Persistence
+        inline bool cartridgeHasBattery() { return hasBattery; }
+        bool loadBatterySave(const std::filesystem::path& path);
+        bool saveBatterySave(const std::filesystem::path& path) const;
+        std::string makePersistencePath(const std::string& romPath) const;
 
     protected:
 
