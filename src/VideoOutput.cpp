@@ -225,19 +225,3 @@ void VideoOutput::renderFrame(const std::array<uint32_t, SCREEN_WIDTH * SCREEN_H
     framebuffer = pixels;
     renderGameFrame();
 }
-
-void VideoOutput::setPixel(int x, int y, uint8_t colorIndex)
-{
-    if (x < 0 || x >= SCREEN_WIDTH || y < 0 || y >= SCREEN_HEIGHT)
-        return;
-
-    static constexpr uint32_t palette[4] =
-    {
-        0xFFE0F8D0, // lightest
-        0xFF88C070,
-        0xFF346856,
-        0xFF081820  // darkest
-    };
-
-    framebuffer[y * SCREEN_WIDTH + x] = palette[colorIndex & 0x03];
-}

@@ -37,8 +37,6 @@ class VideoOutput
 
         void renderFrame(const std::array<uint32_t, SCREEN_WIDTH * SCREEN_HEIGHT>& pixels);
 
-        void setPixel(int x, int y, uint8_t colorIndex);
-
     protected:
 
     private:
