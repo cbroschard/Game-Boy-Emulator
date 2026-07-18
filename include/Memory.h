@@ -11,6 +11,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
+#include "common/HardwareMode.h"
 #include "StateReader.h"
 #include "StateWriter.h"
 
@@ -34,8 +35,9 @@ class Memory
         inline uint8_t readIO(uint16_t offset) const { return io[offset]; }
         inline void writeIO(uint16_t offset, uint8_t value) { io[offset] = value; }
 
-        inline uint8_t readBootROM(uint16_t offset) const { return bootRom[offset]; }
-        inline void writeBootROMByte(uint16_t offset, uint8_t value) { bootRom[offset] = value; }
+        inline uint8_t readBootROM(uint16_t offset) const { return (hardwareMode == HardwareMode::DMG) ? dmgBootRom[offset] : cgbBootRom[offset]; }
+        inline void writeBootROMByte(uint16_t offset, uint8_t value) { (hardwareMode == HardwareMode::DMG) ? dmgBootRom[offset] = value
+            : cgbBootRom[offset] = value; }
 
         inline uint8_t readIE() const { return interruptEnable; }
         inline void writeIE(uint8_t value) { interruptEnable = value; }
@@ -44,15 +46,22 @@ class Memory
 
         inline void disableBootRom() { bootRomEnabled = false; }
 
+        inline void setHardwareMode(HardwareMode mode) { hardwareMode = mode; }
+
         bool loadBIOS(const std::string& path);
+
+        bool isBootRomMapped(uint16_t address) const;
 
     protected:
 
     private:
-        std::array<uint8_t, 0x100> bootRom{}; // DMG BIOS, $0000-$00FF
+        std::array<uint8_t, 0x100> dmgBootRom{}; // DMG BIOS, $0000-$00FF
+        std::array<uint8_t, 0x900> cgbBootRom{}; // CGH BIOS, E0000–00FF + $0200–08FF
         std::array<uint8_t, 0x2000> wram{}; // 8 KB, $C000-$DFFF
         std::array<uint8_t, 0x80>   io{};   // $FF00-$FF7F,
         std::array<uint8_t, 0x7F>   hram{}; // 127 bytes, $FF80-$FFFE
+
+        HardwareMode hardwareMode;
 
         bool bootRomEnabled;
         uint8_t interruptEnable;
