@@ -85,7 +85,7 @@ uint8_t Bus::readInternal(uint16_t address)
     if (!memory)
         return 0xFF;
 
-    if (memory->isBootRomEnabled() && address >= MemoryMap::BOOT_ROM_START && address <= MemoryMap::BOOT_ROM_END)
+    if (memory->isBootRomMapped(address))
         return memory->readBootROM(address);
 
     if (address >= MemoryMap::ROM_FIXED_START && address <= MemoryMap::ROM_SWITCHABLE_END)
