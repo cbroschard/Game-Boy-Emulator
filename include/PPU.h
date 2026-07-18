@@ -10,6 +10,7 @@
 
 #include <array>
 #include <cstdint>
+#include "common/HardwareMode.h"
 #include "StateReader.h"
 #include "StateWriter.h"
 #include "VideoOutput.h"
@@ -25,6 +26,8 @@ class PPU
         inline void attachBusInstance(Bus* bus) { this->bus = bus; }
 
         void reset();
+
+        void setHardwareMode(HardwareMode mode);
 
         void tick(int cyclesElapsed);
 
@@ -52,8 +55,13 @@ class PPU
     private:
         Bus* bus;
 
+        HardwareMode hardwareMode;
+
         std::array<std::array<uint8_t, 0x2000>, 2> vram{};// 2 8K banks VRAM
         std::array<uint8_t, 0xA0>   oam{};  // 160 bytes, $FE00-$FE9F
+
+        std::array<uint8_t, 64> bgPaletteRAM;
+        std::array<uint8_t, 64> objPaletteRAM;
 
         std::array<uint32_t, 160 * 144> framebuffer;
 
@@ -63,6 +71,13 @@ class PPU
             VBlank  = 1,
             OAM     = 2,
             Drawing = 3
+        };
+
+        struct BGPixel
+        {
+            uint8_t colorId;
+            uint8_t palette;
+            bool priority;
         };
 
         struct SpriteEntry
@@ -89,9 +104,13 @@ class PPU
         uint8_t lyc;
 
         uint8_t bgp;
+        uint8_t bgpi;
 
         uint8_t obp0;
         uint8_t obp1;
+        uint8_t obpi;
+
+        uint8_t objPriorityMode;
 
         uint8_t wy;
         uint8_t wx;
@@ -117,8 +136,8 @@ class PPU
 
         void renderScanline(uint8_t line);
 
-        uint8_t fetchBGPixel(int x, int y);
-        uint8_t fetchWindowPixel(int x);
+        BGPixel fetchBGPixel(int x, int y);
+        BGPixel fetchWindowPixel(int x);
 
         uint8_t getVisibleLY() const;
 
@@ -131,8 +150,10 @@ class PPU
         inline bool areSpritesEnabled() const { return (lcdc & 0x02) != 0; }
         inline uint8_t getSpriteHeight() const { return (lcdc & 0x04) ? 16 : 8; }
 
-        void renderSpritesOnScanline(uint8_t line, const uint8_t bgColorIds[160]);
-        void drawSpriteLine(const SpriteEntry& sprite, uint8_t line, const uint8_t bgColorIds[160]);
+        void drawSpriteLine(const SpriteEntry& sprite, uint8_t line, const BGPixel bgPixels[160]);
+        void renderSpritesOnScanline(uint8_t line, const BGPixel bgPixels[160]);
+
+        uint32_t cgbColorToRGB(const std::array<uint8_t, 64>& paletteRAM, uint8_t palette, uint8_t colorId);
 };
 
 #endif // PPU_H
