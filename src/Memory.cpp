@@ -9,6 +9,7 @@
 #include "Memory.h"
 
 Memory::Memory() :
+    hardwareMode(HardwareMode::DMG),
     bootRomEnabled(true),
     interruptEnable(0x00)
 {
@@ -77,7 +78,28 @@ bool Memory::loadBIOS(const std::string& path)
     if (!file)
         return false;
 
-    file.read(reinterpret_cast<char*>(bootRom.data()), bootRom.size());
+    if (hardwareMode == HardwareMode::DMG)
+    {
+        file.read(reinterpret_cast<char*>(dmgBootRom.data()), dmgBootRom.size());
+        return file.gcount() == static_cast<std::streamsize>(dmgBootRom.size());
+    }
 
-    return file.gcount() == static_cast<std::streamsize>(bootRom.size());
+    file.read(reinterpret_cast<char*>(cgbBootRom.data()), cgbBootRom.size());
+    return file.gcount() == static_cast<std::streamsize>(cgbBootRom.size());
+}
+
+bool Memory::isBootRomMapped(uint16_t address) const
+{
+    if (!bootRomEnabled)
+        return false;
+
+    if (hardwareMode == HardwareMode::DMG)
+        return address <= 0x00FF;
+
+    // CGB BIOS mapping:
+    // $0000-$00FF = BIOS
+    // $0100-$01FF = cartridge
+    // $0200-$08FF = BIOS
+    return address <= 0x00FF ||
+           (address >= 0x0200 && address <= 0x08FF);
 }
