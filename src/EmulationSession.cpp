@@ -71,7 +71,10 @@ void EmulationSession::run()
         ? HardwareMode::CGB
         : HardwareMode::DMG;
 
+
+    // Notify subsystems of the hardware mode
     ppu.setHardwareMode(hardwareMode);
+    memory.setHardwareMode(hardwareMode);
 
     if (hardwareMode == HardwareMode::DMG)
     {
