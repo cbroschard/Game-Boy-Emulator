@@ -60,3 +60,6 @@ src/imgui
 !include/Debug/**
 !src/Debug/
 !src/Debug/**
+
+# Games folder
+Games/
