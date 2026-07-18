@@ -338,6 +338,19 @@ void PPU::writeVRAM(uint16_t offset, uint8_t value)
     vram[bank][offset] = value;
 }
 
+void PPU::writeVRAMFromDMA(uint16_t offset, uint8_t value)
+{
+    if (offset >= 0x2000)
+        return;
+
+    const uint8_t bank =
+        hardwareMode == HardwareMode::CGB
+            ? (vramBankSelect & 0x01)
+            : 0;
+
+    vram[bank][offset] = value;
+}
+
 uint8_t PPU::readRegister(uint16_t address) const
 {
     switch (address)
@@ -607,12 +620,22 @@ void PPU::setMode(PPUMode newMode)
     if (mode == newMode)
         return;
 
+    const PPUMode oldMode = mode;
+
     mode = newMode;
 
-    // Update STAT mode bits.
-    stat = (stat & 0xFC) | static_cast<uint8_t>(newMode);
+    stat =
+        (stat & 0xFC) |
+        static_cast<uint8_t>(newMode);
 
     updateStatInterruptSignal();
+
+    if (newMode == PPUMode::HBlank &&
+        oldMode != PPUMode::HBlank &&
+        bus)
+    {
+        bus->onPPUHBlank();
+    }
 }
 
 void PPU::updateStatInterruptSignal()
@@ -1146,26 +1169,34 @@ uint32_t PPU::dmgShadeToRGB(uint8_t shade)
     return 0xFFFFFFFF;
 }
 
-uint32_t PPU::cgbColorToRGB(const std::array<uint8_t, 64>& paletteRAM, uint8_t palette,uint8_t colorId)
+uint32_t PPU::cgbColorToRGB(const std::array<uint8_t, 64>& paletteRAM, uint8_t palette, uint8_t colorId)
 {
     palette &= 0x07;
     colorId &= 0x03;
 
     const uint8_t offset = static_cast<uint8_t>(palette * 8 + colorId * 2);
 
-    const uint16_t color = static_cast<uint16_t>(paletteRAM[offset] |(static_cast<uint16_t>(paletteRAM[offset + 1]) << 8));
+    const uint16_t color = static_cast<uint16_t>(
+        paletteRAM[offset] |
+        (static_cast<uint16_t>(paletteRAM[offset + 1]) << 8)
+    );
 
-    const uint8_t red5 = color & 0x1F;
+    const uint8_t r = color & 0x1F;
+    const uint8_t g = (color >> 5) & 0x1F;
+    const uint8_t b = (color >> 10) & 0x1F;
 
-    const uint8_t green5 = (color >> 5) & 0x1F;
+    // Apply color correction matrix to simulate the CGB TFT LCD
+    const uint32_t correctedRed = (r * 26 + g * 4 + b * 2) >> 5;
+    const uint32_t correctedGreen = (g * 24 + b * 8) >> 5;
+    const uint32_t correctedBlue = (r * 6 + g * 4 + b * 22) >> 5;
 
-    const uint8_t blue5 = (color >> 10) & 0x1F;
+    // Scale the corrected 5-bit values back up to 8-bit limits
+    const uint8_t finalRed = static_cast<uint8_t>((correctedRed << 3) | (correctedRed >> 2));
+    const uint8_t finalGreen = static_cast<uint8_t>((correctedGreen << 3) | (correctedGreen >> 2));
+    const uint8_t finalBlue = static_cast<uint8_t>((correctedBlue << 3) | (correctedBlue >> 2));
 
-    const uint8_t red = static_cast<uint8_t>((red5 << 3) | (red5 >> 2));
-
-    const uint8_t green = static_cast<uint8_t>((green5 << 3) | (green5 >> 2));
-
-    const uint8_t blue = static_cast<uint8_t>((blue5 << 3) | (blue5 >> 2));
-
-    return 0xFF000000 |(static_cast<uint32_t>(red) << 16) | (static_cast<uint32_t>(green) << 8) | static_cast<uint32_t>(blue);
+    return 0xFF000000 |
+           (static_cast<uint32_t>(finalRed) << 16) |
+           (static_cast<uint32_t>(finalGreen) << 8) |
+           static_cast<uint32_t>(finalBlue);
 }

@@ -55,6 +55,13 @@ namespace IORegisters
         constexpr uint16_t Disable = 0xFF50;
     }
 
+    namespace CGB
+    {
+        constexpr uint16_t KEY0 = 0xFF4C;
+        constexpr uint16_t KEY1 = 0xFF4D;
+        constexpr uint16_t SVBK = 0xFF70;
+    }
+
     namespace Interrupt
     {
         constexpr uint16_t IF = 0xFF0F;

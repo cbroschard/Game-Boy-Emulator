@@ -69,6 +69,8 @@ class Bus
         inline uint8_t peek(uint16_t address) { return readInternal(address); }
         inline void poke(uint16_t address, uint8_t value) { writeInternal(address, value); }
 
+        void onPPUHBlank();
+
     protected:
 
     private:
@@ -80,10 +82,24 @@ class Bus
         PPU* ppu;
         Timer* timer;
 
+        uint8_t interruptStatus;
+
+        uint8_t hdma1;
+        uint8_t hdma2;
+        uint8_t hdma3;
+        uint8_t hdma4;
+        uint8_t hdma5;
+
+        bool hblankDMAActive;
+        uint16_t hdmaSource;
+        uint16_t hdmaDestination;
+        uint8_t hdmaBlocksRemaining;
+
         uint8_t readIO(uint16_t address);
         void writeIO(uint16_t address, uint8_t value);
 
-        uint8_t interruptStatus;
+        void transferVRAMDMABlock();
+        void updateHDMAAddresses();
 };
 
 #endif // BUS_H

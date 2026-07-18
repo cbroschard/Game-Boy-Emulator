@@ -26,8 +26,11 @@ class Memory
         void saveState(StateWriter& wrtr) const;
         bool loadState(const StateReader::Chunk& chunk, StateReader& rdr);
 
-        inline uint8_t readWRAM(uint16_t offset) const { return wram[offset]; }
-        inline void writeWRAM(uint16_t offset, uint8_t value) { wram[offset] = value; }
+        uint8_t readWRAM(uint16_t offset) const;
+        void writeWRAM(uint16_t offset, uint8_t value);
+
+        uint8_t readSVBK() const;
+        void writeSVBK(uint8_t value);
 
         inline uint8_t readHRAM(uint16_t offset) const { return hram[offset]; }
         inline void writeHRAM(uint16_t offset, uint8_t value) { hram[offset] = value; }
@@ -48,6 +51,8 @@ class Memory
 
         inline void setHardwareMode(HardwareMode mode) { hardwareMode = mode; }
 
+        inline HardwareMode getHardwareMode() const { return hardwareMode; }
+
         bool loadBIOS(const std::string& path);
 
         bool isBootRomMapped(uint16_t address) const;
@@ -57,14 +62,19 @@ class Memory
     private:
         std::array<uint8_t, 0x100> dmgBootRom{}; // DMG BIOS, $0000-$00FF
         std::array<uint8_t, 0x900> cgbBootRom{}; // CGH BIOS, E0000–00FF + $0200–08FF
-        std::array<uint8_t, 0x2000> wram{}; // 8 KB, $C000-$DFFF
+        std::array<uint8_t, 0x1000> wramBank0{};
+        std::array<std::array<uint8_t, 0x1000>, 7> wramBanks{};
         std::array<uint8_t, 0x80>   io{};   // $FF00-$FF7F,
         std::array<uint8_t, 0x7F>   hram{}; // 127 bytes, $FF80-$FFFE
 
         HardwareMode hardwareMode;
 
         bool bootRomEnabled;
+
         uint8_t interruptEnable;
+
+        uint8_t selectedWRAMBank;
+
 };
 
 #endif // MEMORY_H

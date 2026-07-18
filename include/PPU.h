@@ -42,6 +42,8 @@ class PPU
         uint8_t readVRAM(uint16_t offset) const;
         void writeVRAM(uint16_t offset, uint8_t value);
 
+        void writeVRAMFromDMA(uint16_t offset, uint8_t value);
+
         uint8_t readRegister(uint16_t address) const;
         void writeRegister(uint16_t address, uint8_t value);
 
