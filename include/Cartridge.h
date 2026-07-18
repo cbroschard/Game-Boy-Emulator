@@ -78,10 +78,23 @@ class Cartridge
         CartridgeInfo getCartridgeInfo() const;
 
         // Persistence
-        inline bool cartridgeHasBattery() { return hasBattery; }
+        inline bool cartridgeHasBattery() const { return hasBattery; }
         bool loadBatterySave(const std::filesystem::path& path);
         bool saveBatterySave(const std::filesystem::path& path) const;
         std::string makePersistencePath(const std::string& romPath) const;
+
+        inline bool isBatterySaveDirty() const { return batterySaveDirty; }
+        inline void clearBatterySaveDirty() { batterySaveDirty = false; }
+        inline uint64_t getBatteryModificationCounter() const { return batteryModificationCounter; }
+
+        inline void markBatterySaveDirty()
+        {
+            if (!hasBattery)
+                return;
+
+            batterySaveDirty = true;
+            ++batteryModificationCounter;
+        }
 
     protected:
 
@@ -181,6 +194,9 @@ class Cartridge
         bool hasBattery;
         bool hasTimer;
         bool hasRumble;
+
+        bool batterySaveDirty;
+        uint64_t batteryModificationCounter;
 
         uint16_t selectedROMBank;
         uint8_t selectedRAMBank;

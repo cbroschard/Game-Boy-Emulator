@@ -9,6 +9,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <system_error>
 #include "Cartridge.h"
 
 Cartridge::Cartridge() :
@@ -19,6 +20,8 @@ Cartridge::Cartridge() :
     hasBattery(false),
     hasTimer(false),
     hasRumble(false),
+    batterySaveDirty(false),
+    batteryModificationCounter(0),
     selectedROMBank(1),
     selectedRAMBank(0),
     bankingMode(0)
@@ -107,6 +110,9 @@ bool Cartridge::loadCartridge(const std::string& path)
     cartridgeROM.clear();
     cartridgeRAM.clear();
 
+    batterySaveDirty = false;
+    batteryModificationCounter = 0;
+
     loadFile(path, cartridgeROM);
 
     if (cartridgeROM.size() < 0x150)
@@ -136,7 +142,13 @@ bool Cartridge::loadCartridge(const std::string& path)
     if (cartridgeROM.size() < expectedROMSize)
         throw std::runtime_error("Cartridge ROM file is smaller than header-declared ROM size.");
 
-    const size_t expectedRAMSize = getRAMSizeFromCode(ramSizeCode);
+    size_t expectedRAMSize = getRAMSizeFromCode(ramSizeCode);
+
+    if (mapperType == MapperType::MBC2)
+    {
+        expectedRAMSize = 512;
+        hasRAM = true;
+    }
 
     cartridgeRAM.assign(expectedRAMSize, 0xFF);
 
@@ -292,8 +304,13 @@ uint8_t Cartridge::readRAM(uint16_t offset)
     if (!isRAMAccessible())
         return 0xFF;
 
-    const size_t effectiveRAMOffset =
-        size_t(selectedRAMBank) * 0x2000 + offset;
+    if (mapperType == MapperType::MBC2)
+    {
+        const size_t index = offset & 0x01FF;
+        return 0xF0 | (cartridgeRAM[index] & 0x0F);
+    }
+
+    const size_t effectiveRAMOffset = size_t(selectedRAMBank) * 0x2000 + offset;
 
     if (effectiveRAMOffset >= cartridgeRAM.size())
         return 0xFF;
@@ -306,13 +323,32 @@ void Cartridge::writeRAM(uint16_t offset, uint8_t value)
     if (!isRAMAccessible())
         return;
 
-    const size_t effectiveRAMOffset =
-        size_t(selectedRAMBank) * 0x2000 + offset;
+    size_t effectiveRAMOffset = 0;
+    uint8_t storedValue = value;
+
+    if (mapperType == MapperType::MBC2)
+    {
+        effectiveRAMOffset = offset & 0x01FF;
+        storedValue = value & 0x0F;
+    }
+    else
+    {
+        effectiveRAMOffset = size_t(selectedRAMBank) * 0x2000 + offset;
+    }
 
     if (effectiveRAMOffset >= cartridgeRAM.size())
         return;
 
-    cartridgeRAM[effectiveRAMOffset] = value;
+    if (cartridgeRAM[effectiveRAMOffset] == storedValue)
+        return;
+
+    cartridgeRAM[effectiveRAMOffset] = storedValue;
+
+    if (hasBattery)
+    {
+        batterySaveDirty = true;
+        ++batteryModificationCounter;
+    }
 }
 
 CartridgeColorSupport Cartridge::getColorSupport() const
@@ -781,35 +817,97 @@ std::string Cartridge::getCartridgeTypeName() const
 
 bool Cartridge::loadBatterySave(const std::filesystem::path& path)
 {
+    if (cartridgeRAM.empty())
+        return true;
+
+    std::error_code error;
+
+    if (!std::filesystem::exists(path, error))
+    {
+        if (error)
+        {
+            std::cerr
+                << "Unable to check cartridge persistence file: "
+                << error.message()
+                << "\n";
+
+            return false;
+        }
+
+        // No existing persistence file. This is normal for a new game.
+        return true;
+    }
+
+    if (!std::filesystem::is_regular_file(path, error) || error)
+        return false;
+
+    const std::uintmax_t fileSize = std::filesystem::file_size(path, error);
+
+    if (error)
+        return false;
+
+    if (fileSize != cartridgeRAM.size())
+    {
+        std::cerr
+            << "Persistence file size mismatch. Expected "
+            << cartridgeRAM.size()
+            << " bytes but found "
+            << fileSize
+            << " bytes.\n";
+
+        return false;
+    }
+
     std::ifstream file(path, std::ios::binary);
-
-    if (!file)
-        return true; // No save yet; start with blank RAM.
-
-    file.read(
-        reinterpret_cast<char*>(cartridgeRAM.data()),
-        static_cast<std::streamsize>(cartridgeRAM.size())
-    );
-
-    return file.good() || file.eof();
-}
-
-bool Cartridge::saveBatterySave(const std::filesystem::path& path) const
-{
-    std::ofstream file(
-        path,
-        std::ios::binary | std::ios::trunc
-    );
 
     if (!file)
         return false;
 
-    file.write(
-        reinterpret_cast<const char*>(cartridgeRAM.data()),
-        static_cast<std::streamsize>(cartridgeRAM.size())
-    );
+    file.read(reinterpret_cast<char*>(cartridgeRAM.data()), static_cast<std::streamsize>(cartridgeRAM.size()));
 
     return file.good();
+}
+
+bool Cartridge::saveBatterySave(const std::filesystem::path& path) const
+{
+    if (cartridgeRAM.empty())
+        return true;
+
+    std::filesystem::path temporaryPath = path;
+    temporaryPath += ".tmp";
+
+    {
+        std::ofstream file(temporaryPath, std::ios::binary | std::ios::trunc);
+
+        if (!file)
+            return false;
+
+        file.write(reinterpret_cast<const char*>(cartridgeRAM.data()), static_cast<std::streamsize>(cartridgeRAM.size()));
+
+        file.flush();
+
+        if (!file.good())
+            return false;
+    }
+
+    std::error_code error;
+
+    std::filesystem::remove(path, error);
+    error.clear();
+
+    std::filesystem::rename(
+        temporaryPath,
+        path,
+        error
+    );
+
+    if (error)
+    {
+        std::filesystem::remove(temporaryPath);
+        return false;
+    }
+
+    return true;
 }
 
 std::string Cartridge::makePersistencePath(const std::string& romPath) const

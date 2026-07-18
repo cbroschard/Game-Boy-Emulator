@@ -16,6 +16,8 @@ EmulationSession::EmulationSession() :
     running(true),
     pendingSaveState(false),
     pendingLoadState(false),
+    lastObservedBatteryModification(0),
+    batteryLastModificationTime(0),
     skipNextBreakpointCheck(false),
     uiBridge
     (
@@ -38,7 +40,10 @@ EmulationSession::EmulationSession() :
     validateWiring();
 }
 
-EmulationSession::~EmulationSession() = default;
+EmulationSession::~EmulationSession()
+{
+    flushBatterySave();
+}
 
 void EmulationSession::reset()
 {
@@ -71,7 +76,8 @@ void EmulationSession::run()
 
     if (cartridge.cartridgeHasBattery())
     {
-        persistencePath = cartridge.makePersistencePath(cartridgePath);
+        persistencePath =
+            cartridge.makePersistencePath(cartridgePath);
 
         if (!cartridge.loadBatterySave(persistencePath))
         {
@@ -81,10 +87,13 @@ void EmulationSession::run()
             );
         }
 
-        std::cout
-            << "Cartridge persistence path: "
-            << persistencePath
-            << "\n";
+        // Synchronize the session-side modification tracking with
+        // the freshly loaded cartridge.
+        lastObservedBatteryModification = cartridge.getBatteryModificationCounter();
+
+        batteryLastModificationTime = SDL_GetPerformanceCounter();
+
+        std::cout << "Cartridge persistence path: " << persistencePath << '\n';
     }
 
     hardwareMode = supportsCGB(cartridge.getColorSupport()) ? HardwareMode::CGB : HardwareMode::DMG;
@@ -228,8 +237,7 @@ void EmulationSession::run()
 
         uiBridge.processCommands();
 
-        const bool didStateCommand =
-            processPendingStateCommands(nextFrameTime);
+        const bool didStateCommand = processPendingStateCommands(nextFrameTime);
 
         if (didStateCommand)
         {
@@ -262,25 +270,44 @@ void EmulationSession::run()
         {
             nextFrameTime = now;
         }
+        if (cartridge.cartridgeHasBattery() &&
+            cartridge.isBatterySaveDirty())
+        {
+            const uint64_t now = SDL_GetPerformanceCounter();
+
+            const uint64_t currentModification =
+                cartridge.getBatteryModificationCounter();
+
+            if (currentModification != lastObservedBatteryModification)
+            {
+                lastObservedBatteryModification = currentModification;
+                batteryLastModificationTime = now;
+            }
+
+            const double secondsSinceLastWrite =
+                static_cast<double>(now - batteryLastModificationTime) /
+                static_cast<double>(performanceFrequency);
+
+            if (secondsSinceLastWrite >= 5.0)
+            {
+                if (cartridge.saveBatterySave(persistencePath))
+                {
+                    cartridge.clearBatterySaveDirty();
+
+                    std::cout << "Battery save flushed\n";
+                }
+                else
+                {
+                    std::cerr << "Failed to flush battery save\n";
+
+                    // Wait another five seconds before retrying.
+                    batteryLastModificationTime = now;
+                }
+            }
+        }
     }
 
-    if (cartridge.cartridgeHasBattery() && !persistencePath.empty())
-    {
-        if (!cartridge.saveBatterySave(persistencePath))
-        {
-            std::cerr
-                << "Failed to save cartridge persistence file: "
-                << persistencePath
-                << "\n";
-        }
-        else
-        {
-            std::cout
-                << "Cartridge persistence saved: "
-                << persistencePath
-                << "\n";
-        }
-    }
+    flushBatterySave();
 }
 
 void EmulationSession::wireUp()
@@ -403,7 +430,17 @@ bool EmulationSession::processPendingStateCommands(uint64_t& nextFrameTime)
         ppu.clearFrameReady();
 
         if (!ok)
+        {
             std::cout << "Load state failed\n";
+        }
+        else
+        {
+            cartridge.markBatterySaveDirty();
+
+            lastObservedBatteryModification = cartridge.getBatteryModificationCounter();
+
+            batteryLastModificationTime = SDL_GetPerformanceCounter();
+        }
 
         didWork = true;
     }
@@ -413,4 +450,35 @@ bool EmulationSession::processPendingStateCommands(uint64_t& nextFrameTime)
     uiPaused = false;
 
     return didWork;
+}
+
+void EmulationSession::flushBatterySave()
+{
+    if (!cartridge.cartridgeHasBattery())
+        return;
+
+    if (!cartridge.isBatterySaveDirty())
+        return;
+
+    if (persistencePath.empty())
+        return;
+
+    if (!cartridge.saveBatterySave(persistencePath))
+    {
+        std::cerr
+            << "Failed to save cartridge persistence file: "
+            << persistencePath
+            << '\n';
+
+        return;
+    }
+
+    cartridge.clearBatterySaveDirty();
+
+    lastObservedBatteryModification = cartridge.getBatteryModificationCounter();
+
+    std::cout
+        << "Cartridge persistence flushed: "
+        << persistencePath
+        << '\n';
 }

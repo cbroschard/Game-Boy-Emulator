@@ -78,6 +78,9 @@ class EmulationSession
         bool pendingSaveState;
         bool pendingLoadState;
 
+        uint64_t lastObservedBatteryModification;
+        uint64_t batteryLastModificationTime;
+
         bool skipNextBreakpointCheck;
 
         std::string pendingSavePath;
@@ -99,6 +102,8 @@ class EmulationSession
         void renderUIFrame();
 
         bool processPendingStateCommands(uint64_t& nextFrameTime);
+
+        void flushBatterySave();
 };
 
 #endif // EMULATIONSESSION_H
