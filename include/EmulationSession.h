@@ -45,7 +45,10 @@ class EmulationSession
         inline void setCGBBIOSPath(const std::string& path) { cgbBIOSPath = path; }
         inline void setCartridgePath(const std::string &path) { cartridgePath = path; }
 
-        inline bool loadCartridge(const std::string& path) { return cartridge.loadCartridge(path); }
+        bool insertCartridge(const std::string& path);
+        void ejectCartridge();
+
+        inline bool isCartridgeLoaded() const { return cartridgeLoaded; }
 
         // ML Monitor
         inline void enterMonitor() { monitorController.openMonitor(); }
@@ -85,6 +88,8 @@ class EmulationSession
 
         std::string pendingSavePath;
         std::string pendingLoadPath;
+
+        bool cartridgeLoaded;
 
         UIBridge uiBridge;
 

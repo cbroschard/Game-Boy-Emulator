@@ -66,6 +66,7 @@ class Cartridge
         bool loadState(const StateReader::Chunk& chunk, StateReader& rdr);
 
         bool loadCartridge(const std::string& path);
+        void unloadCartridge();
 
         uint8_t readROM(uint16_t offset);
         void writeROM(uint16_t offset, uint8_t value);

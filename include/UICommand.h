@@ -15,6 +15,7 @@ struct UICommand
     enum class Type
     {
         Insertcartridge,
+        EjectCartridge,
 
         SaveState,
         LoadState,

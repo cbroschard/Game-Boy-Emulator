@@ -16,15 +16,24 @@
 class UIBridge
 {
     public:
-        using VoidFn            = std::function<void()>;
-        using StringFn          = std::function<void(const std::string&)>;
-        using BoolFn            = std::function<bool()>;
+        using VoidFn =
+            std::function<void()>;
 
-        UIBridge(EmulatorUI& ui,
-         std::atomic<bool>& uiPaused,
-         std::atomic<bool>& running,
-         StringFn saveState,
-         StringFn loadState);
+        using StringFn =
+            std::function<void(const std::string&)>;
+
+        using BoolStringFn =
+            std::function<bool(const std::string&)>;
+
+        UIBridge(
+            EmulatorUI& ui,
+            std::atomic<bool>& uiPaused,
+            std::atomic<bool>& running,
+            BoolStringFn insertCartridge,
+            VoidFn ejectCartridge,
+            StringFn saveState,
+            StringFn loadState
+        );
 
         virtual ~UIBridge();
 
@@ -37,6 +46,9 @@ class UIBridge
 
         std::atomic<bool>& uiPaused_;
         std::atomic<bool>& running_;
+
+        BoolStringFn insertCartridge_;
+        VoidFn ejectCartridge_;
 
         StringFn saveState_;
         StringFn loadState_;

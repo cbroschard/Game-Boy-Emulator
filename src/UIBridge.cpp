@@ -5,18 +5,25 @@
 // non-commercial use only. Redistribution, modification, or use
 // of this code in whole or in part for any other purpose is
 // strictly prohibited without the prior written consent of the author.
+#include <iostream>
+#include <utility>
 #include "UIBridge.h"
 
-UIBridge::UIBridge(EmulatorUI& ui,
-                   std::atomic<bool>& uiPaused,
-                   std::atomic<bool>& running,
-                   StringFn saveState,
-                   StringFn loadState) :
-                       ui_(ui),
-                       uiPaused_(uiPaused),
-                       running_(running),
-                       saveState_(saveState),
-                       loadState_(loadState)
+UIBridge::UIBridge(
+    EmulatorUI& ui,
+    std::atomic<bool>& uiPaused,
+    std::atomic<bool>& running,
+    BoolStringFn insertCartridge,
+    VoidFn ejectCartridge,
+    StringFn saveState,
+    StringFn loadState) :
+        ui_(ui),
+        uiPaused_(uiPaused),
+        running_(running),
+        insertCartridge_(std::move(insertCartridge)),
+        ejectCartridge_(std::move(ejectCartridge)),
+        saveState_(std::move(saveState)),
+        loadState_(std::move(loadState))
 {
 
 }
@@ -29,10 +36,33 @@ void UIBridge::processCommands()
     {
         switch (cmd.type)
         {
+            case UICommand::Type::Insertcartridge:
+            {
+                if (insertCartridge_ &&
+                    !insertCartridge_(cmd.path))
+                {
+                    std::cerr
+                        << "Failed to insert cartridge: "
+                        << cmd.path
+                        << '\n';
+                }
+
+                break;
+            }
+
+            case UICommand::Type::EjectCartridge:
+            {
+                if (ejectCartridge_)
+                    ejectCartridge_();
+
+                break;
+            }
+
             case UICommand::Type::SaveState:
             {
                 if (saveState_)
                     saveState_(cmd.path);
+
                 break;
             }
 
@@ -40,6 +70,7 @@ void UIBridge::processCommands()
             {
                 if (loadState_)
                     loadState_(cmd.path);
+
                 break;
             }
 

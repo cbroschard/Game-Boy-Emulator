@@ -157,6 +157,34 @@ bool Cartridge::loadCartridge(const std::string& path)
     return true;
 }
 
+void Cartridge::unloadCartridge()
+{
+    cartridgeROM.clear();
+    cartridgeRAM.clear();
+
+    std::memset(
+        &cartridgeHeader,
+        0,
+        sizeof(CartridgeHeader)
+    );
+
+    cartridgeType = CartridgeType::ROMOnly;
+    mapperType = MapperType::ROMOnly;
+
+    hasRAM = false;
+    ramEnabled = false;
+    hasBattery = false;
+    hasTimer = false;
+    hasRumble = false;
+
+    batterySaveDirty = false;
+    batteryModificationCounter = 0;
+
+    selectedROMBank = 1;
+    selectedRAMBank = 0;
+    bankingMode = 0;
+}
+
 uint8_t Cartridge::readROM(uint16_t address)
 {
     if (cartridgeROM.empty())

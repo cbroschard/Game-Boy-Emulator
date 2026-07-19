@@ -32,11 +32,28 @@ std::vector<UICommand> EmulatorUI::consumeCommands()
 void EmulatorUI::installMenu()
 {
     static bool aboutRequested = false;
+    static bool aboutOpen = false;
 
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("File"))
         {
+            if (ImGui::MenuItem("Insert Cartridge..."))
+            {
+                startFileDialog(
+                    "Select Game Boy Cartridge",
+                    { ".gb", ".gbc", ".sgb" },
+                    UICommand::Type::Insertcartridge
+                );
+            }
+
+            if (ImGui::MenuItem("Eject Cartridge"))
+            {
+                push(UICommand::Type::EjectCartridge);
+            }
+
+            ImGui::Separator();
+
             if (ImGui::MenuItem("Quit", "Alt+F4"))
                 push(UICommand::Type::Quit);
 
@@ -47,21 +64,12 @@ void EmulatorUI::installMenu()
         {
             if (ImGui::MenuItem("Save Emulator State to File...", "Ctrl+S"))
             {
-                startSaveFileDialog(
-                    "Save Emulator State (.sav)",
-                    { ".sav" },
-                    UICommand::Type::SaveState,
-                    true
-                );
+                startSaveFileDialog("Save Emulator State (.sav)", { ".sav" }, UICommand::Type::SaveState, true);
             }
 
             if (ImGui::MenuItem("Load Emulator State from file...", "Ctrl+L"))
             {
-                startFileDialog(
-                    "Select SAV image to load",
-                    { ".sav" },
-                    UICommand::Type::LoadState
-                );
+                startFileDialog("Select SAV image to load", { ".sav" }, UICommand::Type::LoadState);
             }
 
             ImGui::EndMenu();
@@ -80,6 +88,7 @@ void EmulatorUI::installMenu()
 
     if (aboutRequested)
     {
+        aboutOpen = true;
         ImGui::OpenPopup("About GameBoy Emulator");
         aboutRequested = false;
     }
@@ -88,43 +97,23 @@ void EmulatorUI::installMenu()
 
     const float margin = 20.0f;
 
-    ImVec2 availableSize(
-        std::max(250.0f, viewport->WorkSize.x - margin * 2.0f),
-        std::max(180.0f, viewport->WorkSize.y - margin * 2.0f)
-    );
+    const ImVec2 availableSize(std::max(250.0f, viewport->WorkSize.x - (margin * 2.0f)), std::max(180.0f, viewport->WorkSize.y - (margin * 2.0f)));
 
-    ImVec2 desiredSize(
-        std::min(500.0f, availableSize.x),
-        std::min(300.0f, availableSize.y)
-    );
+    const ImVec2 desiredSize(std::min(500.0f, availableSize.x), std::min(300.0f, availableSize.y));
 
-    ImVec2 center(
-        viewport->WorkPos.x + viewport->WorkSize.x * 0.5f,
-        viewport->WorkPos.y + viewport->WorkSize.y * 0.5f
-    );
+    const ImVec2 center(viewport->WorkPos.x + (viewport->WorkSize.x * 0.5f), viewport->WorkPos.y + (viewport->WorkSize.y * 0.5f));
 
-    ImGui::SetNextWindowPos(
-        center,
-        ImGuiCond_Appearing,
-        ImVec2(0.5f, 0.5f)
-    );
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-    ImGui::SetNextWindowSize(
-        desiredSize,
-        ImGuiCond_Appearing
-    );
+    ImGui::SetNextWindowSize(desiredSize, ImGuiCond_Appearing);
 
-    ImGui::SetNextWindowSizeConstraints(
-        ImVec2(250.0f, 180.0f),
-        availableSize
-    );
+    ImGui::SetNextWindowSizeConstraints(ImVec2(250.0f, 180.0f), availableSize);
 
-    const ImGuiWindowFlags popupFlags =
-        ImGuiWindowFlags_NoCollapse;
+    const ImGuiWindowFlags popupFlags = ImGuiWindowFlags_NoCollapse;
 
     if (ImGui::BeginPopupModal(
             "About GameBoy Emulator",
-            nullptr,
+            &aboutOpen,
             popupFlags))
     {
         ImGui::PushTextWrapPos(0.0f);
@@ -137,29 +126,33 @@ void EmulatorUI::installMenu()
         ImGui::Text("Build time: %s", VersionInfo::BUILD_TIME);
 
         ImGui::Spacing();
-        ImGui::TextWrapped(
-            "Press F12 to open or close the machine-language monitor."
-        );
+
+        ImGui::TextWrapped("Press F12 to open or close the machine-language monitor.");
 
         ImGui::PopTextWrapPos();
 
         ImGui::Spacing();
         ImGui::Separator();
 
-        const float buttonWidth = 90.0f;
+        const float closeButtonWidth = 90.0f;
         const float availableWidth = ImGui::GetContentRegionAvail().x;
 
-        if (availableWidth > buttonWidth)
+        if (availableWidth > closeButtonWidth)
         {
             ImGui::SetCursorPosX(
                 ImGui::GetCursorPosX() +
                 availableWidth -
-                buttonWidth
+                closeButtonWidth
             );
         }
 
-        if (ImGui::Button("Close", ImVec2(buttonWidth, 0.0f)))
+        if (ImGui::Button(
+                "Close",
+                ImVec2(closeButtonWidth, 0.0f)))
+        {
+            aboutOpen = false;
             ImGui::CloseCurrentPopup();
+        }
 
         ImGui::EndPopup();
     }
