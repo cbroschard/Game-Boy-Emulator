@@ -196,6 +196,7 @@ uint8_t Cartridge::readROM(uint16_t address)
                 return cartridgeROM[romOffset];
             }
 
+            case MapperType::MBC2:
             case MapperType::MBC3:
             case MapperType::MBC5:
             {
@@ -242,6 +243,26 @@ void Cartridge::writeROM(uint16_t address, uint8_t value)
             else if (address <= 0x7FFF)
             {
                 bankingMode = value & 0x01;
+            }
+
+            break;
+        }
+
+        case MapperType::MBC2:
+        {
+            if (address <= 0x3FFF)
+            {
+                if ((address & 0x0100) == 0)
+                {
+                    ramEnabled = ((value & 0x0F) == 0x0A);
+                }
+                else
+                {
+                    selectedROMBank = value & 0x0F;
+
+                    if (selectedROMBank == 0)
+                        selectedROMBank = 1;
+                }
             }
 
             break;
@@ -583,6 +604,57 @@ void Cartridge::determineCartridgeType(uint8_t rawType)
             hasBattery = true;
             hasRumble = true;
             break;
+
+        case 0x20:
+        {
+            mapperType = MapperType::MBC6;
+            hasRAM = true;
+            hasBattery = true;
+            break;
+        }
+
+        case 0x22:
+        {
+            mapperType = MapperType::MBC7;
+            hasRAM = true;
+            hasBattery = true;
+            hasRumble = true;
+            break;
+        }
+
+        case 0xFC:
+        {
+            mapperType = MapperType::Camera;
+            hasRAM = true;
+            hasBattery = true;
+            break;
+        }
+
+        case 0xFD:
+        {
+            mapperType = MapperType::TAMA5;
+            hasRAM = true;
+            hasBattery = true;
+            hasTimer = true;
+            break;
+        }
+
+        case 0xFE:
+        {
+            mapperType = MapperType::HuC3;
+            hasRAM = true;
+            hasBattery = true;
+            hasTimer = true;
+            break;
+        }
+
+        case 0xFF:
+        {
+            mapperType = MapperType::HuC1;
+            hasRAM = true;
+            hasBattery = true;
+            break;
+        }
 
         default:
             mapperType = MapperType::Unsupported;
