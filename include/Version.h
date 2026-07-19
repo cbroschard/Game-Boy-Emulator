@@ -11,7 +11,7 @@
 struct VersionInfo
 {
     static constexpr const char* NAME = "GameBoy Emulator by Christopher Broschard";
-    static constexpr const char* VERSION = "v0.0.0.1-alpha";
+    static constexpr const char* VERSION = "v0.0.0.2-alpha";
     static constexpr const char* BUILD_DATE = __DATE__;
     static constexpr const char* BUILD_TIME = __TIME__;
 };
