@@ -17,8 +17,7 @@ po::options_description get_config_file_options()
     po::options_description desc("Configuration File Options");
     desc.add_options()
         ("DMG_BIOS", po::value<std::string>()->required(), "Game Boy DMG BIOS")
-        ("GBC_BIOS", po::value<std::string>()->required(), "Game Boy Color BIOS")
-        ("Cartridge", po::value<std::string>()->required(), "Cartridge to load");
+        ("GBC_BIOS", po::value<std::string>()->required(), "Game Boy Color BIOS");
     return desc;
 }
 
@@ -59,7 +58,6 @@ int main()
 
         session.setDMGBIOSPath(vmConfig["DMG_BIOS"].as<std::string>());
         session.setCGBBIOSPath(vmConfig["GBC_BIOS"].as<std::string>());
-        session.setCartridgePath(vmConfig["Cartridge"].as<std::string>());
         session.run();
 
         return 0;

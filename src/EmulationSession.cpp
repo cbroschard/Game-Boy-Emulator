@@ -78,19 +78,6 @@ void EmulationSession::run()
             "CGB BIOS path has not been set."
         );
 
-    if (cartridgePath.empty())
-        throw std::runtime_error(
-            "Cartridge path has not been set."
-        );
-
-    if (!insertCartridge(cartridgePath))
-    {
-        throw std::runtime_error(
-            "Failed to load Cartridge: " +
-            cartridgePath
-        );
-    }
-
     if (!audioOutput.playAudio())
     {
         throw std::runtime_error(
