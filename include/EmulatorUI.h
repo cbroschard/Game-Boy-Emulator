@@ -17,6 +17,7 @@
 #include "imgui/imgui.h"
 #include "imgui/misc/cpp/imgui_stdlib.h"
 #include "UICommand.h"
+#include "Version.h"
 
 class EmulatorUI
 {
